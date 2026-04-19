@@ -1,24 +1,5 @@
-# README
+# Digital Closet Organizer
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+**Tech Stack:** Ruby 3.2.2 | Rails 8.1.3 | SQLite  
 
-Things you may want to cover:
-
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+A web app that helps users organize their wardrobe by cataloging clothing items, creating outfits, and tracking wear frequency. It also supports outfit planning, packing lists, and wardrobe optimization suggestions to reduce unnecessary purchases and save time.
