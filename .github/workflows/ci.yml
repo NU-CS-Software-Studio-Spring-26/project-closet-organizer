@@ -49,7 +49,7 @@ jobs:
           working-directory: back-end
 
       - name: Prepare RuboCop cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         env:
           DEPENDENCIES_HASH: ${{ hashFiles('back-end/.ruby-version', 'back-end/**/.rubocop.yml', 'back-end/**/.rubocop_todo.yml', 'back-end/Gemfile.lock') }}
         with:
