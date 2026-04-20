@@ -1,15 +1,27 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
-  size: 1
-  tags: 
+  name: Ivory Blouse
+  size: medium
+  tags:
+    material: silk
+    season: spring
+    style: elegant
+    brand: Maison
+    color: ivory
   date: 2026-04-19 17:45:04
-  availability: false
+  availability: true
+  user: one
 
 two:
-  name: MyString
-  size: 1
-  tags: 
-  date: 2026-04-19 17:45:04
+  name: Denim Jacket
+  size: large
+  tags:
+    material: denim
+    season: fall
+    style: casual
+    brand: Heritage
+    color: blue
+  date: 2026-04-18 15:30:00
   availability: false
+  user: two

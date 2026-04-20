@@ -8,4 +8,7 @@ class ClothingItem < ApplicationRecord
     large: 3,
     xl: 4
   }
+
+  validates :name, presence: true
+  validates :size, presence: true
 end
