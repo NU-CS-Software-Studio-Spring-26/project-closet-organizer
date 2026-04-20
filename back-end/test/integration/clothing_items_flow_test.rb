@@ -7,17 +7,17 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "clothing items index loads" do
-    get clothing_items_url
+    get clothing_items_url, as: :json
 
     assert_response :success
-    assert_includes response.body, @clothing_item.name
+    assert_includes response_json.map { |item| item["name"] }, @clothing_item.name
   end
 
   test "clothing item show loads" do
-    get clothing_item_url(@clothing_item)
+    get clothing_item_url(@clothing_item), as: :json
 
     assert_response :success
-    assert_includes response.body, @clothing_item.name
+    assert_equal @clothing_item.name, response_json["name"]
   end
 
   test "can create a clothing item" do
@@ -35,10 +35,12 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
           brand: "Studio North",
           color: "camel"
         }
-      }
+      }, as: :json
     end
 
-    assert_redirected_to clothing_item_url(ClothingItem.order(:created_at).last)
+    assert_response :created
+    assert_equal "Camel Coat", response_json["name"]
+    assert_equal "large", response_json["size"]
   end
 
   test "can update a clothing item" do
@@ -55,22 +57,23 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
         brand: "Maison",
         color: "ivory"
       }
-    }
+    }, as: :json
 
-    assert_redirected_to clothing_item_url(@clothing_item)
+    assert_response :success
 
     @clothing_item.reload
     assert_equal "Ivory Silk Blouse", @clothing_item.name
     assert_equal "small", @clothing_item.size
     assert_not @clothing_item.availability?
     assert_equal "dressy", @clothing_item.tags["style"]
+    assert_equal "dressy", response_json["tags"]["style"]
   end
 
   test "can delete a clothing item" do
     assert_difference("ClothingItem.count", -1) do
-      delete clothing_item_url(@clothing_item)
+      delete clothing_item_url(@clothing_item), as: :json
     end
 
-    assert_redirected_to clothing_items_url
+    assert_response :no_content
   end
 end

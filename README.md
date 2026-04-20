@@ -1,5 +1,27 @@
-# Digital Closet Organizer
+# Project Closet Organizer
 
-**Tech Stack:** Ruby 3.2.2 | Rails 8.1.3 | SQLite  
+This repository is now organized as a small monorepo with separate frontend and backend applications.
 
-A web app that helps users organize their wardrobe by cataloging clothing items, creating outfits, and tracking wear frequency. It also supports outfit planning, packing lists, and wardrobe optimization suggestions to reduce unnecessary purchases and save time.
+## Structure
+
+- `front-end/`: React + Vite application for the user interface
+- `back-end/`: Ruby on Rails application that will provide the REST API and backend services
+- `.github/`: repository-level automation and CI configuration
+
+## Working Directories
+
+Run frontend work from:
+
+```bash
+cd front-end
+```
+
+Run backend work from:
+
+```bash
+cd back-end
+```
+
+## CI
+
+GitHub Actions now targets the Rails app from `back-end/`. The frontend remains a separate application and can have its own build and test workflow added as it matures.

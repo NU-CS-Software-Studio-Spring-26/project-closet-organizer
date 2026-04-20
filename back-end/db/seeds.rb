@@ -17,12 +17,12 @@ user = User.create!(
   preferred_style: "casual"
 )
 
-sizes = [:xs, :small, :medium, :large, :xl]
-materials = ["cotton", "denim", "wool", "linen", "polyester"]
-seasons = ["summer", "winter", "spring", "fall"]
-styles = ["casual", "formal", "sport"]
-brands = ["Nike", "Uniqlo", "Zara", "H&M", "Levis"]
-colors = ["red", "blue", "black", "white", "green"]
+sizes = [ :xs, :small, :medium, :large, :xl ]
+materials = [ "cotton", "denim", "wool", "linen", "polyester" ]
+seasons = [ "summer", "winter", "spring", "fall" ]
+styles = [ "casual", "formal", "sport" ]
+brands = [ "Nike", "Uniqlo", "Zara", "H&M", "Levis" ]
+colors = [ "red", "blue", "black", "white", "green" ]
 
 20.times do |i|
   ClothingItem.create!(
@@ -36,7 +36,7 @@ colors = ["red", "blue", "black", "white", "green"]
       color: colors.sample
     },
     date: Time.now,
-    availability: [true, false].sample,
+    availability: [ true, false ].sample,
     user: user
   )
 end

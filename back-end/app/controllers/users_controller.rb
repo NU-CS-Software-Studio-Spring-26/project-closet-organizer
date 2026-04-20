@@ -1,42 +1,36 @@
 class UsersController < ApplicationController
-  before_action :set_user, only: %i[show edit update destroy]
+  before_action :set_user, only: %i[show update destroy]
 
   def index
     @users = User.includes(:clothing_items).order(:username)
+    render json: @users.map { |user| user_payload(user) }
   end
 
   def show
-    @clothing_items = @user.clothing_items.order(:name)
-  end
-
-  def new
-    @user = User.new
+    render json: user_payload(@user)
   end
 
   def create
     @user = User.new(user_params)
 
     if @user.save
-      redirect_to @user, notice: "User created successfully."
+      render json: user_payload(@user), status: :created
     else
-      render :new, status: :unprocessable_content
+      render_validation_errors(@user)
     end
-  end
-
-  def edit
   end
 
   def update
     if @user.update(user_params)
-      redirect_to @user, notice: "User updated successfully."
+      render json: user_payload(@user)
     else
-      render :edit, status: :unprocessable_content
+      render_validation_errors(@user)
     end
   end
 
   def destroy
     @user.destroy
-    redirect_to users_path, notice: "User deleted successfully."
+    head :no_content
   end
 
   private

@@ -5,37 +5,37 @@
 # `$XDG_CONFIG_HOME/git/ignore` or `~/.config/git/ignore`
 
 # Ignore bundler config.
-/.bundle
+/back-end/.bundle
 
 # Ignore all environment files.
-/.env*
+.env*
 
 # Ignore all logfiles and tempfiles.
-/log/*
-/tmp/*
-!/log/.keep
-!/tmp/.keep
+/back-end/log/*
+/back-end/tmp/*
+!/back-end/log/.keep
+!/back-end/tmp/.keep
 
 # Ignore pidfiles, but keep the directory.
-/tmp/pids/*
-!/tmp/pids/
-!/tmp/pids/.keep
+/back-end/tmp/pids/*
+!/back-end/tmp/pids/
+!/back-end/tmp/pids/.keep
 
 # Ignore storage (uploaded files in development and any SQLite databases).
-/storage/*
-!/storage/.keep
-/tmp/storage/*
-!/tmp/storage/
-!/tmp/storage/.keep
+/back-end/storage/*
+!/back-end/storage/.keep
+/back-end/tmp/storage/*
+!/back-end/tmp/storage/
+!/back-end/tmp/storage/.keep
 
-/public/assets
+/back-end/public/assets
 
 # Ignore key files for decrypting credentials and more.
-/config/*.key
+/back-end/config/*.key
 
 # Frontend build and dependency artifacts
-node_modules/
-dist/
+/front-end/node_modules/
+/front-end/dist/
 
 # macOS filesystem metadata
 .DS_Store

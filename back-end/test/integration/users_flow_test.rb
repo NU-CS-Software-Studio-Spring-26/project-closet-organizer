@@ -6,17 +6,17 @@ class UsersFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "users index loads" do
-    get users_url
+    get users_url, as: :json
 
     assert_response :success
-    assert_includes response.body, @user.username
+    assert_equal @user.username, response_json.first["username"]
   end
 
   test "user show loads" do
-    get user_url(@user)
+    get user_url(@user), as: :json
 
     assert_response :success
-    assert_includes response.body, @user.username
+    assert_equal @user.username, response_json["username"]
   end
 
   test "can create a user" do
@@ -28,10 +28,11 @@ class UsersFlowTest < ActionDispatch::IntegrationTest
           password: "password123",
           password_confirmation: "password123"
         }
-      }
+      }, as: :json
     end
 
-    assert_redirected_to user_url(User.order(:created_at).last)
+    assert_response :created
+    assert_equal "sam", response_json["username"]
   end
 
   test "can update a user without changing password" do
@@ -42,18 +43,19 @@ class UsersFlowTest < ActionDispatch::IntegrationTest
         password: "",
         password_confirmation: ""
       }
-    }
+    }, as: :json
 
-    assert_redirected_to user_url(@user)
+    assert_response :success
     assert_equal "alex-updated", @user.reload.username
+    assert_equal "alex-updated", response_json["username"]
     assert @user.authenticate("password123")
   end
 
   test "can delete a user" do
     assert_difference("User.count", -1) do
-      delete user_url(@user)
+      delete user_url(@user), as: :json
     end
 
-    assert_redirected_to users_url
+    assert_response :no_content
   end
 end
