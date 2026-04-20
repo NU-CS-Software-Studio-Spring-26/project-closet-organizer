@@ -33,3 +33,9 @@
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
+# Frontend build and dependency artifacts
+node_modules/
+dist/
+
+# macOS filesystem metadata
+.DS_Store
