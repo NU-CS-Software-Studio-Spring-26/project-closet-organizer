@@ -36,7 +36,6 @@ colors = [ "red", "blue", "black", "white", "green" ]
       color: colors.sample
     },
     date: Time.now,
-    availability: [ true, false ].sample,
     user: user
   )
 end

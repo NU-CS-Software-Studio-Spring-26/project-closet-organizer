@@ -28,7 +28,6 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
           user_id: @user.id,
           size: "large",
           date: "2026-04-20",
-          availability: "1",
           material: "wool",
           season: "winter",
           style: "tailored",
@@ -50,7 +49,6 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
         user_id: @user.id,
         size: "small",
         date: "2026-04-18",
-        availability: "0",
         material: "silk",
         season: "spring",
         style: "dressy",
@@ -64,7 +62,6 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
     @clothing_item.reload
     assert_equal "Ivory Silk Blouse", @clothing_item.name
     assert_equal "small", @clothing_item.size
-    assert_not @clothing_item.availability?
     assert_equal "dressy", @clothing_item.tags["style"]
     assert_equal "dressy", response_json["tags"]["style"]
   end
