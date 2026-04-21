@@ -10,7 +10,6 @@ one:
     brand: Maison
     color: ivory
   date: 2026-04-19 17:45:04
-  availability: true
   user: one
 
 two:
@@ -23,5 +22,4 @@ two:
     brand: Heritage
     color: blue
   date: 2026-04-18 15:30:00
-  availability: false
   user: two

@@ -10,9 +10,8 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_19_224847) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_21_141000) do
   create_table "clothing_items", force: :cascade do |t|
-    t.boolean "availability"
     t.datetime "created_at", null: false
     t.datetime "date"
     t.string "name"
