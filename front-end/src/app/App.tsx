@@ -1,126 +1,310 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Plus, Grid3x3, LayoutGrid } from "lucide-react";
+import { ArrowRight, Plus, Users } from "lucide-react";
 import { ClothingCard } from "./components/ClothingCard";
-import { FilterBar } from "./components/FilterBar";
-import { OutfitBuilder } from "./components/OutfitBuilder";
+import { CreateItemPage } from "./components/CreateItemPage";
+import { ItemDetailPage } from "./components/ItemDetailPage";
+import { UserDetailPage } from "./components/UserDetailPage";
+import { UsersDirectoryPage } from "./components/UsersDirectoryPage";
+import {
+  ClothingItem,
+  fetchClosetOwner,
+  formatPossessive,
+  formatPreferredStyle,
+  titleize,
+  User,
+} from "./lib/closet";
 
-const mockClothingItems = [
-  {
-    id: 1,
-    name: "Silk Blouse",
-    size: "M",
-    tags: { material: "Silk", season: "Spring", style: "Elegant", brand: "Maison Laurent", color: "Ivory" },
-    imageUrl: "https://images.unsplash.com/photo-1655252205378-19e1efa5fa76?w=800&q=80",
-    date: "2026-03-15",
-    availability: true,
-  },
-  {
-    id: 2,
-    name: "Tailored Blazer",
-    size: "S",
-    tags: { material: "Wool", season: "Fall", style: "Professional", brand: "Studio Noir", color: "Charcoal" },
-    imageUrl: "https://images.unsplash.com/photo-1655252205460-4cddd84586bc?w=800&q=80",
-    date: "2026-02-20",
-    availability: true,
-  },
-  {
-    id: 3,
-    name: "Linen Dress",
-    size: "M",
-    tags: { material: "Linen", season: "Summer", style: "Casual", brand: "Nomad", color: "Sand" },
-    imageUrl: "https://images.unsplash.com/photo-1687481795360-77c1115d26c6?w=800&q=80",
-    date: "2026-04-01",
-    availability: false,
-  },
-  {
-    id: 4,
-    name: "Plaid Shirt",
-    size: "L",
-    tags: { material: "Cotton", season: "Fall", style: "Casual", brand: "Heritage", color: "Gray" },
-    imageUrl: "https://images.unsplash.com/photo-1600247354058-a55b0f6fb720?w=800&q=80",
-    date: "2026-01-10",
-    availability: true,
-  },
-  {
-    id: 5,
-    name: "Cashmere Coat",
-    size: "M",
-    tags: { material: "Cashmere", season: "Winter", style: "Luxury", brand: "Atelier", color: "Camel" },
-    imageUrl: "https://images.unsplash.com/photo-1719552979950-f35958f97ebe?w=800&q=80",
-    date: "2025-12-05",
-    availability: true,
-  },
-  {
-    id: 6,
-    name: "Cotton Tee",
-    size: "S",
-    tags: { material: "Cotton", season: "All", style: "Casual", brand: "Essentials", color: "White" },
-    imageUrl: "https://images.unsplash.com/photo-1524282745852-a463fa495a7f?w=800&q=80",
-    date: "2026-03-28",
-    availability: true,
-  },
-  {
-    id: 7,
-    name: "Denim Jacket",
-    size: "M",
-    tags: { material: "Denim", season: "Spring", style: "Casual", brand: "Vintage Co", color: "Indigo" },
-    imageUrl: "https://images.unsplash.com/photo-1629426958003-35a5583b2977?w=800&q=80",
-    date: "2026-02-14",
-    availability: true,
-  },
-  {
-    id: 8,
-    name: "Leather Belt",
-    size: "One Size",
-    tags: { material: "Leather", season: "All", style: "Accessory", brand: "Craftsmen", color: "Black" },
-    imageUrl: "https://images.unsplash.com/photo-1603805785279-da750208c094?w=800&q=80",
-    date: "2026-01-20",
-    availability: true,
-  },
-];
+interface RouteState {
+  kind: "home";
+}
 
-const mockOutfits = [
-  {
-    id: 1,
-    name: "Office Elegance",
-    date: "April 10, 2026",
-    items: [
-      { id: 2, name: "Tailored Blazer", imageUrl: "https://images.unsplash.com/photo-1655252205460-4cddd84586bc?w=400&q=80" },
-      { id: 1, name: "Silk Blouse", imageUrl: "https://images.unsplash.com/photo-1655252205378-19e1efa5fa76?w=400&q=80" },
-      { id: 4, name: "Plaid Shirt", imageUrl: "https://images.unsplash.com/photo-1600247354058-a55b0f6fb720?w=400&q=80" },
-      { id: 8, name: "Leather Belt", imageUrl: "https://images.unsplash.com/photo-1603805785279-da750208c094?w=400&q=80" },
-    ],
-  },
-  {
-    id: 2,
-    name: "Weekend Casual",
-    date: "April 13, 2026",
-    items: [
-      { id: 7, name: "Denim Jacket", imageUrl: "https://images.unsplash.com/photo-1629426958003-35a5583b2977?w=400&q=80" },
-      { id: 6, name: "Cotton Tee", imageUrl: "https://images.unsplash.com/photo-1524282745852-a463fa495a7f?w=400&q=80" },
-      { id: 3, name: "Linen Dress", imageUrl: "https://images.unsplash.com/photo-1687481795360-77c1115d26c6?w=400&q=80" },
-    ],
-  },
-];
+interface ClosetRouteState {
+  kind: "closet";
+}
+
+interface ItemRouteState {
+  kind: "item";
+  itemId: number;
+}
+
+interface UsersRouteState {
+  kind: "users";
+}
+
+interface UserRouteState {
+  kind: "user";
+  userId: number;
+}
+
+interface NewItemRouteState {
+  kind: "new-item";
+  userId: number | null;
+}
+
+type AppRoute =
+  | RouteState
+  | ClosetRouteState
+  | ItemRouteState
+  | UsersRouteState
+  | UserRouteState
+  | NewItemRouteState;
+
+function getRouteFromLocation(
+  pathname = window.location.pathname,
+  search = window.location.search,
+): AppRoute {
+  const normalizedPath = pathname.replace(/\/+$/, "") || "/";
+  const itemMatch = normalizedPath.match(/^\/items\/(\d+)$/);
+  const userMatch = normalizedPath.match(/^\/users\/(\d+)$/);
+  const query = new URLSearchParams(search);
+
+  if (normalizedPath === "/items/new") {
+    const userId = query.get("userId");
+    return { kind: "new-item", userId: userId ? Number(userId) : null };
+  }
+
+  if (normalizedPath === "/closet") {
+    return { kind: "closet" };
+  }
+
+  if (normalizedPath === "/users") {
+    return { kind: "users" };
+  }
+
+  if (userMatch) {
+    return { kind: "user", userId: Number(userMatch[1]) };
+  }
+
+  if (itemMatch) {
+    return { kind: "item", itemId: Number(itemMatch[1]) };
+  }
+
+  if (normalizedPath === "/") {
+    return { kind: "home" };
+  }
+
+  return { kind: "closet" };
+}
+
+function navigateTo(pathname: string) {
+  if (window.location.pathname === pathname) {
+    return;
+  }
+
+  window.history.pushState({}, "", pathname);
+  window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
+function updateUserItem(user: User | null, nextItem: ClothingItem) {
+  if (!user || user.id !== nextItem.user_id) {
+    return user;
+  }
+
+  return {
+    ...user,
+    clothing_items: user.clothing_items
+      .map((item) => (item.id === nextItem.id ? nextItem : item))
+      .sort((left, right) => left.name.localeCompare(right.name)),
+  };
+}
+
+function removeUserItem(user: User | null, itemId: number) {
+  if (!user) {
+    return user;
+  }
+
+  return {
+    ...user,
+    clothing_items: user.clothing_items.filter((item) => item.id !== itemId),
+  };
+}
 
 export default function App() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("All");
-  const [isOutfitBuilderOpen, setIsOutfitBuilderOpen] = useState(false);
+  const [route, setRoute] = useState<AppRoute>(() => getRouteFromLocation());
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const filteredItems = mockClothingItems.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.tags.brand?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.tags.color?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
+  useEffect(() => {
+    const handlePopState = () => setRoute(getRouteFromLocation());
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (route.kind !== "closet") {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function loadCloset() {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      try {
+        const nextUser = await fetchClosetOwner(controller.signal);
+        setUser(nextUser);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setErrorMessage(
+            error instanceof Error ? error.message : "Unable to load closet data from the backend.",
+          );
+          setUser(null);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadCloset();
+
+    return () => controller.abort();
+  }, [route.kind]);
+
+  const clothingItems = user?.clothing_items ?? [];
+
+  const closetTitle = user ? formatPossessive(titleize(user.username)) : "Your Closet";
+  const preferredStyle = formatPreferredStyle(user?.preferred_style);
+  const selectedItem =
+    route.kind === "item"
+      ? clothingItems.find((item) => item.id === route.itemId) ?? null
+      : null;
+
+  if (route.kind === "home") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-2xl text-center"
+        >
+          <h1
+            className="mb-6"
+            style={{
+              fontFamily: "Cormorant Garamond, serif",
+              fontSize: "clamp(3rem, 8vw, 5.5rem)",
+              lineHeight: "0.95",
+            }}
+          >
+            Closet Organizer
+          </h1>
+          <p
+            className="text-lg text-muted-foreground mb-10"
+            style={{ fontFamily: "Outfit, sans-serif", lineHeight: "1.7" }}
+          >
+            Organize clothing items, manage closet details.
+          </p>
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <button
+              onClick={() => navigateTo("/closet")}
+              className="inline-flex items-center justify-center gap-3 px-6 py-3 border border-border hover:border-foreground transition-colors"
+              style={{ fontFamily: "Outfit, sans-serif" }}
+            >
+              Open Closet
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => navigateTo("/users")}
+              className="inline-flex items-center justify-center gap-3 px-6 py-3 border border-border hover:border-foreground transition-colors"
+              style={{ fontFamily: "Outfit, sans-serif" }}
+            >
+              View Our Users
+              <Users className="w-4 h-4" />
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (route.kind === "users") {
+    return (
+      <UsersDirectoryPage
+        onBack={() => navigateTo("/")}
+        onSelectUser={(userId) => navigateTo(`/users/${userId}`)}
+      />
+    );
+  }
+
+  if (route.kind === "user") {
+    const selectedUser = user?.id === route.userId ? user : null;
+
+    return (
+      <UserDetailPage
+        userId={route.userId}
+        initialUser={selectedUser}
+        onBack={() => navigateTo("/users")}
+        onOpenItem={(itemId) => navigateTo(`/items/${itemId}`)}
+        onAddItem={(userId) => navigateTo(`/items/new?userId=${userId}`)}
+      />
+    );
+  }
+
+  if (route.kind === "new-item") {
+    const targetUser =
+      route.userId && user?.id === route.userId ? user : route.userId ? null : user;
+    const targetUserId = route.userId ?? user?.id ?? null;
+
+    return (
+      <div className="min-h-screen bg-background">
+        <CreateItemPage
+          userId={targetUserId}
+          initialUser={targetUser}
+          onBack={() => {
+            if (route.userId) {
+              navigateTo(`/users/${route.userId}`);
+              return;
+            }
+
+            navigateTo("/closet");
+          }}
+          onItemCreated={(nextItem) => {
+            setUser((current) => {
+              if (!current || current.id !== nextItem.user_id) {
+                return current;
+              }
+
+              return {
+                ...current,
+                clothing_items: [...current.clothing_items, nextItem].sort((left, right) =>
+                  left.name.localeCompare(right.name),
+                ),
+              };
+            });
+            navigateTo(`/items/${nextItem.id}`);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (route.kind === "item") {
+    return (
+      <div className="min-h-screen bg-background">
+        <ItemDetailPage
+          itemId={route.itemId}
+          initialItem={selectedItem}
+          onBack={() => navigateTo("/closet")}
+          onItemSaved={(nextItem) => setUser((current) => updateUserItem(current, nextItem))}
+          onItemDeleted={(itemId) => {
+            setUser((current) => removeUserItem(current, itemId));
+            navigateTo("/closet");
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex items-end justify-between mb-8">
+          <div className="flex items-end justify-between mb-8 gap-6">
             <div>
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
@@ -128,88 +312,122 @@ export default function App() {
                 transition={{ duration: 0.8 }}
                 className="mb-2 tracking-tight"
                 style={{
-                  fontFamily: 'Cormorant Garamond, serif',
-                  fontSize: 'clamp(2.5rem, 5vw, 4rem)',
-                  lineHeight: '1',
+                  fontFamily: "Cormorant Garamond, serif",
+                  fontSize: "clamp(2.5rem, 5vw, 4rem)",
+                  lineHeight: "1",
                 }}
               >
-                Your Closet
+                {closetTitle}
               </motion.h1>
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
                 className="text-muted-foreground tracking-wide"
-                style={{ fontFamily: 'Outfit, sans-serif' }}
+                style={{ fontFamily: "Outfit, sans-serif" }}
               >
-                {mockClothingItems.length} items · {mockOutfits.length} saved outfits
+                {isLoading
+                  ? "Loading items from your backend..."
+                  : `${clothingItems.length} ${clothingItems.length === 1 ? "item" : "items"}${
+                      preferredStyle ? ` · ${preferredStyle} style` : ""
+                    }`}
               </motion.p>
             </div>
 
-            <motion.button
+            <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
-              onClick={() => setIsOutfitBuilderOpen(true)}
-              className="flex items-center gap-3 px-6 py-3 bg-foreground text-background hover:bg-foreground/90 transition-colors"
+              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
             >
-              <LayoutGrid className="w-5 h-5" />
-              <span style={{ fontFamily: 'Outfit, sans-serif' }}>View Outfits</span>
-            </motion.button>
+              <button
+                onClick={() => {
+                  if (!user) {
+                    return;
+                  }
+
+                  navigateTo(`/items/new?userId=${user.id}`);
+                }}
+                disabled={!user}
+                className="flex items-center justify-center gap-3 px-5 py-3 border border-border hover:border-foreground transition-colors disabled:opacity-50"
+                style={{ fontFamily: "Outfit, sans-serif" }}
+              >
+                <Plus className="w-4 h-4" />
+                Add Item
+              </button>
+              <button
+                onClick={() => navigateTo("/users")}
+                className="flex items-center justify-center gap-3 px-5 py-3 border border-border hover:border-foreground transition-colors"
+                style={{ fontFamily: "Outfit, sans-serif" }}
+              >
+                <Users className="w-4 h-4" />
+                All Users
+              </button>
+            </motion.div>
           </div>
 
-          <FilterBar
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            selectedFilter={selectedFilter}
-            setSelectedFilter={setSelectedFilter}
-          />
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-12">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="mb-8 flex items-center justify-between"
-        >
-          <p className="text-muted-foreground" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            Showing {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
-          </p>
-          <div className="flex items-center gap-2">
-            <button className="p-2 hover:bg-muted transition-colors">
-              <Grid3x3 className="w-5 h-5" />
-            </button>
+        {errorMessage ? (
+          <div className="border border-destructive/20 bg-destructive/5 p-6">
+            <p className="text-lg mb-2" style={{ fontFamily: "Cormorant Garamond, serif" }}>
+              The closet data could not be loaded.
+            </p>
+            <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
+              {errorMessage}. Make sure both dev servers are running through `./start.sh`.
+            </p>
           </div>
-        </motion.div>
+        ) : isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="animate-pulse space-y-3">
+                <div className="aspect-[3/4] bg-muted" />
+                <div className="h-6 bg-muted w-2/3" />
+                <div className="h-4 bg-muted w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="mb-8 flex items-center justify-between"
+            >
+              <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
+                Showing {clothingItems.length} {clothingItems.length === 1 ? "item" : "items"}
+              </p>
+            </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
-          {filteredItems.map((item, index) => (
-            <ClothingCard key={item.id} {...item} index={index} />
-          ))}
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="mt-16 py-12 border-t border-border"
-        >
-          <button className="w-full max-w-md mx-auto block py-6 border-2 border-dashed border-border hover:border-foreground transition-colors flex items-center justify-center gap-3">
-            <Plus className="w-6 h-6" />
-            <span className="uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Add New Item
-            </span>
-          </button>
-        </motion.div>
+            {user && clothingItems.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
+                {clothingItems.map((item, index) => (
+                  <ClothingCard
+                    key={item.id}
+                    {...item}
+                    index={index}
+                    onSelect={(itemId) => navigateTo(`/items/${itemId}`)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="border border-dashed border-border p-10 text-center">
+                <p className="text-2xl mb-3" style={{ fontFamily: "Cormorant Garamond, serif" }}>
+                  {user ? "No matching items yet" : "No closet data found"}
+                </p>
+                <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
+                  {user
+                    ? "Try another search or filter, or add clothing items in the backend."
+                    : "Create or seed a user in the Rails app and refresh this page."}
+                </p>
+              </div>
+            )}
+          </>
+        )}
       </main>
-
-      <OutfitBuilder
-        outfits={mockOutfits}
-        isOpen={isOutfitBuilderOpen}
-        onClose={() => setIsOutfitBuilderOpen(false)}
-      />
     </div>
   );
 }

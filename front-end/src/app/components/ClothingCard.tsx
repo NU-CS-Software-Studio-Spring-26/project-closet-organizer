@@ -1,6 +1,9 @@
 import { motion } from "motion/react";
-import { Heart, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState } from "react";
+import {
+  formatDisplaySize,
+} from "../lib/closet";
 
 interface ClothingCardProps {
   id: number;
@@ -13,14 +16,23 @@ interface ClothingCardProps {
     brand?: string;
     color?: string;
   };
-  imageUrl: string;
-  availability: boolean;
+  imageUrl?: string | null;
   index: number;
+  onSelect?: (id: number) => void;
 }
 
-export function ClothingCard({ id, name, size, tags, imageUrl, availability, index }: ClothingCardProps) {
-  const [isFavorite, setIsFavorite] = useState(false);
+export function ClothingCard({
+  id,
+  name,
+  size,
+  tags,
+  imageUrl,
+  index,
+  onSelect,
+}: ClothingCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const itemMetadata = [tags.material, tags.season, tags.style].filter(Boolean).join(" · ");
+  const handleSelect = () => onSelect?.(id);
 
   return (
     <motion.div
@@ -30,22 +42,61 @@ export function ClothingCard({ id, name, size, tags, imageUrl, availability, ind
       className="group relative cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={handleSelect}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          handleSelect();
+        }
+      }}
+      role="button"
+      tabIndex={0}
     >
       <div className="relative overflow-hidden bg-muted aspect-[3/4]">
-        <img
-          src={imageUrl}
-          alt={name}
-          className="w-full h-full object-cover transition-transform duration-700 ease-out"
-          style={{
-            transform: isHovered ? 'scale(1.08)' : 'scale(1)',
-          }}
-        />
-
-        {!availability && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <span className="text-white tracking-[0.3em] uppercase" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              In Use
-            </span>
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={name}
+            className="w-full h-full object-cover transition-transform duration-700 ease-out"
+            style={{
+              transform: isHovered ? "scale(1.08)" : "scale(1)",
+            }}
+          />
+        ) : (
+          <div
+            className="h-full w-full p-6 flex flex-col justify-between bg-gradient-to-br from-stone-100 via-neutral-50 to-stone-200 text-stone-700 transition-transform duration-700 ease-out"
+            style={{
+              transform: isHovered ? "scale(1.03)" : "scale(1)",
+            }}
+          >
+            <h3
+              className="max-w-[11ch] break-words text-stone-700/85"
+              style={{
+                fontFamily: "Cormorant Garamond, serif",
+                fontSize: "clamp(2rem, 4vw, 3rem)",
+                lineHeight: "0.95",
+              }}
+            >
+              {name}
+            </h3>
+            <div className="space-y-2">
+              {tags.color && (
+                <p
+                  className="uppercase tracking-[0.25em] text-xs"
+                  style={{ fontFamily: "Outfit, sans-serif" }}
+                >
+                  {tags.color}
+                </p>
+              )}
+              {itemMetadata && (
+                <p
+                  className="text-sm opacity-70"
+                  style={{ fontFamily: "Outfit, sans-serif" }}
+                >
+                  {itemMetadata}
+                </p>
+              )}
+            </div>
           </div>
         )}
 
@@ -58,17 +109,14 @@ export function ClothingCard({ id, name, size, tags, imageUrl, availability, ind
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: isHovered ? 1 : 0, y: isHovered ? 0 : 20 }}
-          className="absolute bottom-4 left-4 right-4 flex gap-2"
+          className="absolute bottom-4 left-4 right-4"
         >
           <button
-            onClick={() => setIsFavorite(!isFavorite)}
-            className="bg-white/90 backdrop-blur-sm p-2 hover:bg-white transition-colors"
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+            className="w-full bg-white/90 backdrop-blur-sm px-4 py-2 hover:bg-white transition-colors flex items-center justify-center gap-2"
           >
-            <Heart
-              className={`w-5 h-5 ${isFavorite ? 'fill-red-500 stroke-red-500' : 'stroke-black'}`}
-            />
-          </button>
-          <button className="flex-1 bg-white/90 backdrop-blur-sm px-4 py-2 hover:bg-white transition-colors flex items-center justify-center gap-2">
             <Plus className="w-5 h-5" />
             <span style={{ fontFamily: 'Outfit, sans-serif' }}>Add to Outfit</span>
           </button>
@@ -80,7 +128,7 @@ export function ClothingCard({ id, name, size, tags, imageUrl, availability, ind
           {name}
         </h3>
         <div className="flex items-center gap-2 text-muted-foreground" style={{ fontFamily: 'Outfit, sans-serif' }}>
-          <span className="uppercase tracking-wider">{size}</span>
+          <span className="uppercase tracking-wider">{formatDisplaySize(size)}</span>
           {tags.color && (
             <>
               <span>·</span>
