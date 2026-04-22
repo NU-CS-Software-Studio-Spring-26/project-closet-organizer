@@ -1,0 +1,7 @@
+{
+  "name": "project-closet-organizer",
+  "version": "1.0.0",
+  "scripts": {
+    "heroku-postbuild": "cd front-end && npm install && npm run build && cp -r dist ../back-end/public"
+  }
+}
