@@ -16,7 +16,9 @@ Milestone 0 MVP:
 
 - Annabel Goldman
 - Adedamola Adejumobi
-- David Swims
+- David Gerchik
+- Kailyn Mohammed
+- Reem Khalid
 
 ## Deployment
 
@@ -24,7 +26,7 @@ Heroku deployment link:
 
 - https://YOUR-HEROKU-APP-NAME.herokuapp.com
 
-Replace the placeholder URL above with the live Heroku app URL used by the team.
+(add link above when live)
 
 ## Communication
 
