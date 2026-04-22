@@ -52,4 +52,4 @@ Miro board link:
 
 - Backend and frontend are in one monorepo.
 - Backend tests run in GitHub Actions.
-- Deployment target for assignment is Heroku (update README and this wiki when live URL is finalized).
+- Deployment target for assignment is Heroku 
