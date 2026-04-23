@@ -39,8 +39,10 @@ Team communication and decision-making rules:
 ## Repository Layout
 
 - front-end: React 19 + Vite client application
-- back-end: Rails 8 API with SQLite, models, controllers, seeds, and tests
+- back-end: the only Rails backend in the repo, used for local dev, CI, and deployment
 - .github: automation and CI workflows
+- Procfile: Heroku process definitions that run the app from `back-end/`
+- package.json: root deployment glue that builds `front-end/` into `back-end/public`
 - start.sh: root-level launcher that boots both apps together
 - PROJECT_INDEX.md: concise structure index
 - wiki.md: extended project notes, roadmap, references, and design links

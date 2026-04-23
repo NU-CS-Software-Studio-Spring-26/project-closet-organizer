@@ -12,8 +12,8 @@ project-closet-organizer/
 ├── .github/                    # CI and automation
 ├── back-end/                   # Rails API app
 ├── front-end/                  # React + Vite UI app
-├── storage/                    # Local SQLite artifacts
-├── tmp/                        # Runtime/cache artifacts
+├── Procfile                    # Heroku runtime entrypoint for back-end/
+├── package.json                # Frontend build glue for deployment
 ├── README.md                   # Assignment-facing overview and setup
 ├── wiki.md                     # Extended project documentation
 ├── PROJECT_INDEX.md            # This structure index

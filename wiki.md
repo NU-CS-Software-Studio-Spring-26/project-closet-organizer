@@ -51,5 +51,6 @@ Miro board link:
 ## Working Notes
 
 - Backend and frontend are in one monorepo.
+- The active Rails backend lives in `back-end/`; the old duplicate root Rails scaffold has been removed.
 - Backend tests run in GitHub Actions.
 - Deployment target for assignment is Heroku 
