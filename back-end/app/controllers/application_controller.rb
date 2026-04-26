@@ -48,6 +48,7 @@ class ApplicationController < ActionController::API
       only: %i[id name date user_id created_at updated_at tags]
     )
     payload["size"] = clothing_item.size
+    payload["image_url"] = clothing_item.photo.attached? ? url_for(clothing_item.photo) : nil
     payload["user"] = user_payload(clothing_item.user, include_items: false) if include_user
     payload
   end

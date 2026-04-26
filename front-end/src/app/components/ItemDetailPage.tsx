@@ -3,7 +3,6 @@ import { motion } from "motion/react";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import {
   ClothingItem,
-  ClothingItemFormValues,
   destroyClothingItem,
   fetchClothingItem,
   formatDisplaySize,
@@ -11,6 +10,10 @@ import {
   titleize,
   toClothingItemFormValues,
 } from "../lib/closet";
+import { ItemHeroPreview } from "./ItemHeroPreview";
+import { ItemMetadataFields } from "./ItemMetadataFields";
+import { ItemPhotoField } from "./ItemPhotoField";
+import { useItemPhotoState } from "../lib/useItemPhotoState";
 
 interface ItemDetailPageProps {
   itemId: number;
@@ -20,13 +23,6 @@ interface ItemDetailPageProps {
   onItemDeleted: (itemId: number) => void;
 }
 
-const sizeOptions = ["xs", "small", "medium", "large", "xl"];
-
-const tagFields: Array<keyof Pick<
-  ClothingItemFormValues,
-  "brand" | "color" | "material" | "season" | "style"
->> = ["brand", "color", "material", "season", "style"];
-
 export function ItemDetailPage({
   itemId,
   initialItem,
@@ -35,7 +31,7 @@ export function ItemDetailPage({
   onItemDeleted,
 }: ItemDetailPageProps) {
   const [item, setItem] = useState<ClothingItem | null>(initialItem ?? null);
-  const [formValues, setFormValues] = useState<ClothingItemFormValues | null>(
+  const [formValues, setFormValues] = useState(
     initialItem ? toClothingItemFormValues(initialItem) : null,
   );
   const [isLoading, setIsLoading] = useState(!initialItem);
@@ -43,6 +39,7 @@ export function ItemDetailPage({
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const photoState = useItemPhotoState(item?.image_url);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -51,6 +48,7 @@ export function ItemDetailPage({
       if (initialItem?.id === itemId) {
         setItem(initialItem);
         setFormValues(toClothingItemFormValues(initialItem));
+        photoState.reset();
         setIsLoading(false);
         return;
       }
@@ -62,6 +60,7 @@ export function ItemDetailPage({
         const nextItem = await fetchClothingItem(itemId, controller.signal);
         setItem(nextItem);
         setFormValues(toClothingItemFormValues(nextItem));
+        photoState.reset();
       } catch (error) {
         if (!controller.signal.aborted) {
           setErrorMessage(
@@ -85,10 +84,13 @@ export function ItemDetailPage({
       return false;
     }
 
-    return JSON.stringify(toClothingItemFormValues(item)) !== JSON.stringify(formValues);
-  }, [item, formValues]);
+    const metadataHasChanged =
+      JSON.stringify(toClothingItemFormValues(item)) !== JSON.stringify(formValues);
 
-  const previewName = item?.name?.trim() || "Untitled Item";
+    return metadataHasChanged || Boolean(photoState.selectedFile) || photoState.removeExisting;
+  }, [formValues, item, photoState.removeExisting, photoState.selectedFile]);
+
+  const previewName = formValues?.name.trim() || item?.name?.trim() || "Untitled Item";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -101,9 +103,13 @@ export function ItemDetailPage({
     setSuccessMessage("");
 
     try {
-      const updatedItem = await saveClothingItem(item.id, item.user_id, formValues);
+      const updatedItem = await saveClothingItem(item.id, item.user_id, formValues, {
+        photo: photoState.selectedFile,
+        removePhoto: photoState.removeExisting,
+      });
       setItem(updatedItem);
       setFormValues(toClothingItemFormValues(updatedItem));
+      photoState.reset();
       setSuccessMessage("Item details saved.");
       onItemSaved(updatedItem);
     } catch (error) {
@@ -183,42 +189,13 @@ export function ItemDetailPage({
       </button>
 
       <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr] items-start">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
-          className="aspect-[4/5] bg-gradient-to-br from-stone-100 via-neutral-50 to-stone-200 border border-border p-8 flex flex-col justify-between"
-        >
-          <div>
-            <p
-              className="uppercase tracking-[0.3em] text-xs text-muted-foreground mb-4"
-              style={{ fontFamily: "Outfit, sans-serif" }}
-            >
-              Clothing Item
-            </p>
-            <h1
-              className="mb-0 max-w-[12ch] break-words text-stone-700/85"
-              style={{
-                fontFamily: "Cormorant Garamond, serif",
-                fontSize: "clamp(2.75rem, 5vw, 4.75rem)",
-                lineHeight: "0.95",
-              }}
-            >
-              {previewName}
-            </h1>
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
-              {formatDisplaySize(item.size)}
-            </p>
-            {item.tags.style && (
-              <p className="text-sm text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
-                {titleize(item.tags.style)} style
-              </p>
-            )}
-          </div>
-        </motion.div>
+        <ItemHeroPreview
+          imageUrl={photoState.imageUrl}
+          label="Clothing Item"
+          primaryDetail={formatDisplaySize(formValues.size)}
+          secondaryDetail={formValues.style ? `${titleize(formValues.style)} style` : null}
+          title={previewName}
+        />
 
         <motion.form
           initial={{ opacity: 0, y: 18 }}
@@ -262,67 +239,18 @@ export function ItemDetailPage({
           )}
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <label className="space-y-2 sm:col-span-2">
-              <span>Name</span>
-              <input
-                value={formValues.name}
-                onChange={(event) =>
-                  setFormValues((current) =>
-                    current ? { ...current, name: event.target.value } : current,
-                  )
-                }
-                className="w-full border border-border bg-card px-4 py-3"
-                required
-              />
-            </label>
-
-            <label className="space-y-2">
-              <span>Size</span>
-              <select
-                value={formValues.size}
-                onChange={(event) =>
-                  setFormValues((current) =>
-                    current ? { ...current, size: event.target.value } : current,
-                  )
-                }
-                className="w-full border border-border bg-card px-4 py-3"
-              >
-                {sizeOptions.map((size) => (
-                  <option key={size} value={size}>
-                    {formatDisplaySize(size)}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="space-y-2">
-              <span>Date</span>
-              <input
-                type="date"
-                value={formValues.date}
-                onChange={(event) =>
-                  setFormValues((current) =>
-                    current ? { ...current, date: event.target.value } : current,
-                  )
-                }
-                className="w-full border border-border bg-card px-4 py-3"
-              />
-            </label>
-
-            {tagFields.map((fieldName) => (
-              <label key={fieldName} className="space-y-2">
-                <span>{titleize(fieldName)}</span>
-                <input
-                  value={formValues[fieldName]}
-                  onChange={(event) =>
-                    setFormValues((current) =>
-                      current ? { ...current, [fieldName]: event.target.value } : current,
-                    )
-                  }
-                  className="w-full border border-border bg-card px-4 py-3"
-                />
-              </label>
-            ))}
+            <ItemPhotoField
+              description="Upload a photo to display behind the item title throughout the closet."
+              hasExistingPhoto={Boolean(item.image_url)}
+              inputRef={photoState.inputRef}
+              isRemovingExisting={photoState.removeExisting}
+              onClearSelection={photoState.clearSelectedFile}
+              onFileChange={photoState.updateSelectedFile}
+              onKeepExisting={photoState.keepExistingPhoto}
+              onRemoveExisting={photoState.markExistingForRemoval}
+              selectedFileName={photoState.selectedFile?.name}
+            />
+            <ItemMetadataFields values={formValues} onChange={setFormValues} />
           </div>
 
           <div className="border-t border-border pt-5 flex items-center justify-between gap-4">
