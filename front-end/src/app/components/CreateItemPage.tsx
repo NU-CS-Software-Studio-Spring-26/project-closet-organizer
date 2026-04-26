@@ -3,7 +3,6 @@ import { motion } from "motion/react";
 import { ArrowLeft, Plus } from "lucide-react";
 import {
   ClothingItem,
-  ClothingItemFormValues,
   createClothingItem,
   emptyClothingItemFormValues,
   fetchUser,
@@ -12,6 +11,10 @@ import {
   titleize,
   User,
 } from "../lib/closet";
+import { ItemHeroPreview } from "./ItemHeroPreview";
+import { ItemMetadataFields } from "./ItemMetadataFields";
+import { ItemPhotoField } from "./ItemPhotoField";
+import { useItemPhotoState } from "../lib/useItemPhotoState";
 
 interface CreateItemPageProps {
   userId: number | null;
@@ -20,12 +23,6 @@ interface CreateItemPageProps {
   onItemCreated: (item: ClothingItem) => void;
 }
 
-const sizeOptions = ["xs", "small", "medium", "large", "xl"];
-const tagFields: Array<keyof Pick<
-  ClothingItemFormValues,
-  "brand" | "color" | "material" | "season" | "style"
->> = ["brand", "color", "material", "season", "style"];
-
 export function CreateItemPage({
   userId,
   initialUser,
@@ -33,10 +30,11 @@ export function CreateItemPage({
   onItemCreated,
 }: CreateItemPageProps) {
   const [user, setUser] = useState<User | null>(initialUser ?? null);
-  const [formValues, setFormValues] = useState<ClothingItemFormValues>(emptyClothingItemFormValues);
+  const [formValues, setFormValues] = useState(emptyClothingItemFormValues);
   const [isLoading, setIsLoading] = useState(!initialUser);
   const [isCreating, setIsCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const photoState = useItemPhotoState();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -80,11 +78,19 @@ export function CreateItemPage({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!userId) {
+      setErrorMessage("A user is required before you can create an item.");
+      setIsCreating(false);
+      return;
+    }
+
     setIsCreating(true);
     setErrorMessage("");
 
     try {
-      const createdItem = await createClothingItem(userId, formValues);
+      const createdItem = await createClothingItem(userId, formValues, {
+        photo: photoState.selectedFile,
+      });
       onItemCreated(createdItem);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to create this clothing item.");
@@ -117,7 +123,7 @@ export function CreateItemPage({
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
-      <div className="border border-destructive/20 bg-destructive/5 p-6">
+        <div className="border border-destructive/20 bg-destructive/5 p-6">
           <p className="text-lg mb-2" style={{ fontFamily: "Cormorant Garamond, serif" }}>
             A user is required before you can add an item.
           </p>
@@ -140,40 +146,13 @@ export function CreateItemPage({
       </button>
 
       <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr] items-start">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
-          className="aspect-[4/5] bg-gradient-to-br from-stone-100 via-neutral-50 to-stone-200 border border-border p-8 flex flex-col justify-between"
-        >
-          <div>
-            <p
-              className="uppercase tracking-[0.3em] text-xs text-muted-foreground mb-4"
-              style={{ fontFamily: "Outfit, sans-serif" }}
-            >
-              New Clothing Item
-            </p>
-            <h1
-              className="mb-0 max-w-[12ch] break-words text-stone-700/85"
-              style={{
-                fontFamily: "Cormorant Garamond, serif",
-                fontSize: "clamp(2.75rem, 5vw, 4.75rem)",
-                lineHeight: "0.95",
-              }}
-            >
-              {previewName}
-            </h1>
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
-              {formatDisplaySize(formValues.size)}
-            </p>
-            <p className="text-sm text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
-              Adding to {formatPossessive(titleize(user.username))}
-            </p>
-          </div>
-        </motion.div>
+        <ItemHeroPreview
+          imageUrl={photoState.imageUrl}
+          label="New Clothing Item"
+          primaryDetail={formatDisplaySize(formValues.size)}
+          secondaryDetail={`Adding to ${formatPossessive(titleize(user.username))}`}
+          title={previewName}
+        />
 
         <motion.form
           initial={{ opacity: 0, y: 18 }}
@@ -199,53 +178,14 @@ export function CreateItemPage({
           )}
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <label className="space-y-2 sm:col-span-2">
-              <span>Name</span>
-              <input
-                value={formValues.name}
-                onChange={(event) => setFormValues((current) => ({ ...current, name: event.target.value }))}
-                className="w-full border border-border bg-card px-4 py-3"
-                required
-              />
-            </label>
-
-            <label className="space-y-2">
-              <span>Size</span>
-              <select
-                value={formValues.size}
-                onChange={(event) => setFormValues((current) => ({ ...current, size: event.target.value }))}
-                className="w-full border border-border bg-card px-4 py-3"
-              >
-                {sizeOptions.map((size) => (
-                  <option key={size} value={size}>
-                    {formatDisplaySize(size)}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="space-y-2">
-              <span>Date</span>
-              <input
-                type="date"
-                value={formValues.date}
-                onChange={(event) => setFormValues((current) => ({ ...current, date: event.target.value }))}
-                className="w-full border border-border bg-card px-4 py-3"
-              />
-            </label>
-
-            {tagFields.map((fieldName) => (
-              <label key={fieldName} className="space-y-2">
-                <span>{titleize(fieldName)}</span>
-                <input
-                  value={formValues[fieldName]}
-                  onChange={(event) =>
-                    setFormValues((current) => ({ ...current, [fieldName]: event.target.value }))
-                  }
-                  className="w-full border border-border bg-card px-4 py-3"
-                />
-              </label>
-            ))}
+            <ItemPhotoField
+              description="Upload a photo to display behind the item title in the closet and detail views."
+              inputRef={photoState.inputRef}
+              onClearSelection={photoState.clearSelectedFile}
+              onFileChange={photoState.updateSelectedFile}
+              selectedFileName={photoState.selectedFile?.name}
+            />
+            <ItemMetadataFields values={formValues} onChange={setFormValues} />
           </div>
 
           <div className="border-t border-border pt-5 flex items-center justify-end">

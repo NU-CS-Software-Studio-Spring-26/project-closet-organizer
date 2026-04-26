@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="320" viewBox="0 0 240 320" role="img" aria-label="Closet item photo fixture">
+  <rect width="240" height="320" fill="#e7ded5" />
+  <rect x="24" y="28" width="192" height="264" rx="24" fill="#c6a78a" />
+  <path d="M78 104c12-24 72-24 84 0l14 32c5 12 4 26-3 37l-23 35v40H90v-40l-23-35c-7-11-8-25-3-37z" fill="#4f5d75" />
+</svg>

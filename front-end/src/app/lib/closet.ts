@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 export interface ClothingItemTags {
   material?: string;
@@ -23,6 +23,7 @@ export interface ClothingItem {
   created_at?: string;
   updated_at?: string;
   tags: ClothingItemTags;
+  image_url?: string | null;
   user?: UserSummary;
 }
 
@@ -39,6 +40,11 @@ export interface ClothingItemFormValues {
   style: string;
   brand: string;
   color: string;
+}
+
+export interface ClothingItemPhotoOptions {
+  photo?: File | null;
+  removePhoto?: boolean;
 }
 
 export function emptyClothingItemFormValues(): ClothingItemFormValues {
@@ -144,26 +150,18 @@ export async function fetchClothingItem(id: number, signal?: AbortSignal) {
   return (await response.json()) as ClothingItem;
 }
 
-export async function saveClothingItem(id: number, userId: number, values: ClothingItemFormValues) {
+export async function saveClothingItem(
+  id: number,
+  userId: number,
+  values: ClothingItemFormValues,
+  photoOptions: ClothingItemPhotoOptions = {},
+) {
   const response = await fetch(`${API_BASE_URL}/clothing_items/${id}`, {
     method: "PATCH",
     headers: {
-      "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify({
-      clothing_item: {
-        name: values.name,
-        user_id: userId,
-        size: values.size,
-        date: values.date || null,
-        material: values.material,
-        season: values.season,
-        style: values.style,
-        brand: values.brand,
-        color: values.color,
-      },
-    }),
+    body: buildClothingItemFormData(userId, values, photoOptions),
   });
 
   if (!response.ok) {
@@ -173,26 +171,17 @@ export async function saveClothingItem(id: number, userId: number, values: Cloth
   return (await response.json()) as ClothingItem;
 }
 
-export async function createClothingItem(userId: number, values: ClothingItemFormValues) {
+export async function createClothingItem(
+  userId: number,
+  values: ClothingItemFormValues,
+  photoOptions: ClothingItemPhotoOptions = {},
+) {
   const response = await fetch(`${API_BASE_URL}/clothing_items`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify({
-      clothing_item: {
-        name: values.name,
-        user_id: userId,
-        size: values.size,
-        date: values.date || null,
-        material: values.material,
-        season: values.season,
-        style: values.style,
-        brand: values.brand,
-        color: values.color,
-      },
-    }),
+    body: buildClothingItemFormData(userId, values, photoOptions),
   });
 
   if (!response.ok) {
@@ -223,4 +212,32 @@ async function buildApiError(response: Response) {
   } catch {
     return new Error(`Request failed with status ${response.status}`);
   }
+}
+
+function buildClothingItemFormData(
+  userId: number,
+  values: ClothingItemFormValues,
+  photoOptions: ClothingItemPhotoOptions,
+) {
+  const formData = new FormData();
+
+  formData.append("clothing_item[name]", values.name);
+  formData.append("clothing_item[user_id]", String(userId));
+  formData.append("clothing_item[size]", values.size);
+  formData.append("clothing_item[date]", values.date);
+  formData.append("clothing_item[material]", values.material);
+  formData.append("clothing_item[season]", values.season);
+  formData.append("clothing_item[style]", values.style);
+  formData.append("clothing_item[brand]", values.brand);
+  formData.append("clothing_item[color]", values.color);
+
+  if (photoOptions.photo) {
+    formData.append("clothing_item[photo]", photoOptions.photo);
+  }
+
+  if (photoOptions.removePhoto) {
+    formData.append("clothing_item[remove_photo]", "true");
+  }
+
+  return formData;
 }

@@ -16,7 +16,7 @@ interface ClothingCardProps {
     brand?: string;
     color?: string;
   };
-  imageUrl?: string | null;
+  image_url?: string | null;
   index: number;
   onSelect?: (id: number) => void;
 }
@@ -26,7 +26,7 @@ export function ClothingCard({
   name,
   size,
   tags,
-  imageUrl,
+  image_url,
   index,
   onSelect,
 }: ClothingCardProps) {
@@ -53,9 +53,9 @@ export function ClothingCard({
       tabIndex={0}
     >
       <div className="relative overflow-hidden bg-muted aspect-[3/4]">
-        {imageUrl ? (
+        {image_url ? (
           <img
-            src={imageUrl}
+            src={image_url}
             alt={name}
             className="w-full h-full object-cover transition-transform duration-700 ease-out"
             style={{
@@ -64,21 +64,11 @@ export function ClothingCard({
           />
         ) : (
           <div
-            className="h-full w-full p-6 flex flex-col justify-between bg-gradient-to-br from-stone-100 via-neutral-50 to-stone-200 text-stone-700 transition-transform duration-700 ease-out"
+            className="h-full w-full p-6 flex flex-col justify-end bg-gradient-to-br from-stone-100 via-neutral-50 to-stone-200 text-stone-700 transition-transform duration-700 ease-out"
             style={{
               transform: isHovered ? "scale(1.03)" : "scale(1)",
             }}
           >
-            <h3
-              className="max-w-[11ch] break-words text-stone-700/85"
-              style={{
-                fontFamily: "Cormorant Garamond, serif",
-                fontSize: "clamp(2rem, 4vw, 3rem)",
-                lineHeight: "0.95",
-              }}
-            >
-              {name}
-            </h3>
             <div className="space-y-2">
               {tags.color && (
                 <p
@@ -101,10 +91,33 @@ export function ClothingCard({
         )}
 
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isHovered ? 1 : 0 }}
+          initial={{ opacity: image_url ? 0.72 : 0.12 }}
+          animate={{ opacity: isHovered ? 1 : image_url ? 0.72 : 0.12 }}
           className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"
         />
+
+        <div className="absolute inset-x-0 top-0 p-5">
+          <p
+            className="uppercase tracking-[0.3em] text-[11px] mb-3"
+            style={{
+              color: image_url ? "rgba(255,255,255,0.75)" : "rgba(68,64,60,0.72)",
+              fontFamily: "Outfit, sans-serif",
+            }}
+          >
+            Clothing Item
+          </p>
+          <h3
+            className="max-w-[11ch] break-words"
+            style={{
+              color: image_url ? "white" : "rgba(68, 64, 60, 0.92)",
+              fontFamily: "Cormorant Garamond, serif",
+              fontSize: "clamp(2rem, 4vw, 3rem)",
+              lineHeight: "0.95",
+            }}
+          >
+            {name}
+          </h3>
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -124,9 +137,6 @@ export function ClothingCard({
       </div>
 
       <div className="mt-3 space-y-1">
-        <h3 className="tracking-wide" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-          {name}
-        </h3>
         <div className="flex items-center gap-2 text-muted-foreground" style={{ fontFamily: 'Outfit, sans-serif' }}>
           <span className="uppercase tracking-wider">{formatDisplaySize(size)}</span>
           {tags.color && (
