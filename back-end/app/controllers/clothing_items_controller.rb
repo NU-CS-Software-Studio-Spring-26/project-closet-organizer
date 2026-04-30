@@ -1,8 +1,9 @@
 class ClothingItemsController < ApplicationController
+  before_action :require_login
   before_action :set_clothing_item, only: %i[show update destroy]
 
   def index
-    @clothing_items = ClothingItem.includes(:user).order(:name)
+    @clothing_items = current_user.clothing_items.includes(:user).order(:name)
     render json: @clothing_items.map { |clothing_item| clothing_item_payload(clothing_item) }
   end
 
@@ -38,14 +39,14 @@ class ClothingItemsController < ApplicationController
   private
 
   def set_clothing_item
-    @clothing_item = ClothingItem.find(params[:id])
+    @clothing_item = current_user.clothing_items.find(params[:id])
   end
 
   def clothing_item_params
-    base_params = params.require(:clothing_item).permit(:name, :size, :date, :user_id, :photo)
+    base_params = params.require(:clothing_item).permit(:name, :size, :date, :photo)
     tag_params = params.require(:clothing_item).permit(:material, :season, :style, :brand, :color).to_h.compact_blank
 
-    base_params.merge(tags: tag_params)
+    base_params.merge(tags: tag_params, user_id: current_user.id)
   end
 
   def remove_photo_requested?

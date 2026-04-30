@@ -1,4 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL ?? "http://127.0.0.1:3000";
 
 export interface ClothingItemTags {
   material?: string;
@@ -116,12 +117,43 @@ export function toClothingItemFormValues(item: ClothingItem): ClothingItemFormVa
 }
 
 export async function fetchClosetOwner(signal?: AbortSignal) {
-  const users = await fetchUsers(signal);
-  return users[0] ?? null;
+  return fetchCurrentUser(signal);
+}
+
+export async function fetchCurrentUser(signal?: AbortSignal) {
+  const response = await fetch(`${API_BASE_URL}/me`, {
+    credentials: "include",
+    signal,
+  });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+
+  return (await response.json()) as User;
+}
+
+export function beginGoogleSignIn() {
+  window.location.assign(`${BACKEND_BASE_URL}/auth/google_oauth2`);
+}
+
+export async function logoutSession() {
+  const response = await fetch(`${API_BASE_URL}/session`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
 }
 
 export async function fetchUsers(signal?: AbortSignal) {
-  const response = await fetch(`${API_BASE_URL}/users`, { signal });
+  const response = await fetch(`${API_BASE_URL}/users`, { credentials: "include", signal });
 
   if (!response.ok) {
     throw new Error(`Request failed with status ${response.status}`);
@@ -131,7 +163,7 @@ export async function fetchUsers(signal?: AbortSignal) {
 }
 
 export async function fetchUser(id: number, signal?: AbortSignal) {
-  const response = await fetch(`${API_BASE_URL}/users/${id}`, { signal });
+  const response = await fetch(`${API_BASE_URL}/users/${id}`, { credentials: "include", signal });
 
   if (!response.ok) {
     throw new Error(`Request failed with status ${response.status}`);
@@ -141,7 +173,7 @@ export async function fetchUser(id: number, signal?: AbortSignal) {
 }
 
 export async function fetchClothingItem(id: number, signal?: AbortSignal) {
-  const response = await fetch(`${API_BASE_URL}/clothing_items/${id}`, { signal });
+  const response = await fetch(`${API_BASE_URL}/clothing_items/${id}`, { credentials: "include", signal });
 
   if (!response.ok) {
     throw new Error(`Request failed with status ${response.status}`);
@@ -158,6 +190,7 @@ export async function saveClothingItem(
 ) {
   const response = await fetch(`${API_BASE_URL}/clothing_items/${id}`, {
     method: "PATCH",
+    credentials: "include",
     headers: {
       Accept: "application/json",
     },
@@ -178,6 +211,7 @@ export async function createClothingItem(
 ) {
   const response = await fetch(`${API_BASE_URL}/clothing_items`, {
     method: "POST",
+    credentials: "include",
     headers: {
       Accept: "application/json",
     },
@@ -194,6 +228,7 @@ export async function createClothingItem(
 export async function destroyClothingItem(id: number) {
   const response = await fetch(`${API_BASE_URL}/clothing_items/${id}`, {
     method: "DELETE",
+    credentials: "include",
     headers: {
       Accept: "application/json",
     },

@@ -1,9 +1,9 @@
 class UsersController < ApplicationController
+  before_action :require_login
   before_action :set_user, only: %i[show update destroy]
 
   def index
-    @users = User.includes(:clothing_items).order(:username)
-    render json: @users.map { |user| user_payload(user) }
+    render json: [user_payload(current_user)]
   end
 
   def show
@@ -11,13 +11,7 @@ class UsersController < ApplicationController
   end
 
   def create
-    @user = User.new(user_params)
-
-    if @user.save
-      render json: user_payload(@user), status: :created
-    else
-      render_validation_errors(@user)
-    end
+    render_unauthorized("User creation is handled through Google sign-in.")
   end
 
   def update
@@ -36,7 +30,7 @@ class UsersController < ApplicationController
   private
 
   def set_user
-    @user = User.find(params[:id])
+    @user = current_user
   end
 
   def user_params
