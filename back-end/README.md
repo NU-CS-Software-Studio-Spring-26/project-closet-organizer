@@ -9,6 +9,7 @@ Rails 8 JSON backend for the closet organizer app.
 - SQLite
 - Puma
 - bcrypt via `has_secure_password`
+- Active Storage for image uploads
 
 ## What It Does
 
@@ -16,6 +17,7 @@ The backend currently exposes CRUD endpoints for:
 
 - users
 - clothing items
+- outfit uploads
 
 Clothing items belong to users and store flexible metadata in a JSON `tags` field for:
 
@@ -24,6 +26,8 @@ Clothing items belong to users and store flexible metadata in a JSON `tags` fiel
 - `style`
 - `brand`
 - `color`
+
+Outfit uploads belong to users, store a source image through Active Storage, and create ordered `outfit_detections` after analysis.
 
 ## Local Setup
 
@@ -52,12 +56,15 @@ POST   /clothing_items
 GET    /clothing_items/:id
 PATCH  /clothing_items/:id
 DELETE /clothing_items/:id
+POST   /outfit_uploads
+GET    /outfit_uploads/:id
 ```
 
 Notes:
 
 - `/` resolves to `clothing_items#index`
 - responses default to JSON
+- CORS headers are added for allowed frontend dev origins
 - `ApplicationController` returns `404` JSON for missing records and `422` JSON for validation failures
 
 ## Data Model
@@ -68,6 +75,7 @@ Notes:
 - `preferred_style`
 - `password_digest`
 - `has_many :clothing_items`
+- `has_many :outfit_uploads`
 - `has_secure_password`
 
 ### `ClothingItem`
@@ -77,6 +85,7 @@ Notes:
 - `date`
 - `tags`
 - `user_id`
+- `photo` via Active Storage
 - `belongs_to :user`
 
 Supported `size` enum values:
@@ -87,12 +96,41 @@ Supported `size` enum values:
 - `large`
 - `xl`
 
+### `OutfitUpload`
+
+- `user_id`
+- `status`
+- `provider`
+- `vision_model`
+- `error_message`
+- `detected_at`
+- `raw_response`
+- `source_photo` via Active Storage
+- `has_many :outfit_detections`
+
+Supported `status` enum values:
+
+- `pending`
+- `processing`
+- `succeeded`
+- `failed`
+
+### `OutfitDetection`
+
+- `outfit_upload_id`
+- `category`
+- `confidence`
+- `suggested_name`
+- `details`
+- `position`
+
 ## Seeds
 
 `db/seeds.rb` currently creates:
 
-- one demo user: `demo_user`
-- 20 clothing items with randomized sizes and tag values
+- one populated user: `alexis_ward`
+- one empty user: `annabel_goldman`
+- 20 clothing items with randomized sizes and tag values for the populated user
 
 Load them with:
 
@@ -115,6 +153,16 @@ bin/rubocop
 bin/brakeman --no-pager
 bin/bundler-audit
 ```
+
+Current backend test coverage includes model tests plus integration tests for users, clothing items, and outfit uploads.
+
+## Environment
+
+See `back-end/.env.example` for expected variables.
+
+- `OPENROUTER_API_KEY` is required for outfit detection.
+- `OPENROUTER_MODEL` defaults to `openai/gpt-4.1-mini`.
+- Active Storage can be configured for S3-style storage through the provided AWS variables.
 
 ## Frontend Integration
 

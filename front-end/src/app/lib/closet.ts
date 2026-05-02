@@ -31,6 +31,39 @@ export interface User extends UserSummary {
   clothing_items: ClothingItem[];
 }
 
+export interface OutfitDetection {
+  id: number;
+  outfit_upload_id: number;
+  category: string;
+  confidence: number | null;
+  suggested_name?: string | null;
+  details: {
+    dominant_color?: string;
+    material_guess?: string;
+    style_guess?: string;
+    notes?: string;
+  };
+  position: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface OutfitUpload {
+  id: number;
+  user_id: number;
+  status: string;
+  provider?: string | null;
+  vision_model?: string | null;
+  error_message?: string | null;
+  detected_at?: string | null;
+  source_photo_url?: string | null;
+  detections: OutfitDetection[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type CreateItemMode = "manual" | "image";
+
 export interface ClothingItemFormValues {
   name: string;
   size: string;
@@ -45,6 +78,10 @@ export interface ClothingItemFormValues {
 export interface ClothingItemPhotoOptions {
   photo?: File | null;
   removePhoto?: boolean;
+}
+
+export interface OutfitUploadPhotoOptions {
+  photo: File;
 }
 
 export function emptyClothingItemFormValues(): ClothingItemFormValues {
@@ -115,6 +152,21 @@ export function toClothingItemFormValues(item: ClothingItem): ClothingItemFormVa
   };
 }
 
+export function toClothingItemFormValuesFromDetection(
+  detection: OutfitDetection,
+): ClothingItemFormValues {
+  return {
+    name: detection.suggested_name?.trim() || titleize(detection.category),
+    size: "medium",
+    date: "",
+    material: detection.details.material_guess?.trim() ?? "",
+    season: "",
+    style: detection.details.style_guess?.trim() ?? "",
+    brand: "",
+    color: detection.details.dominant_color?.trim() ?? "",
+  };
+}
+
 export async function fetchClosetOwner(signal?: AbortSignal) {
   const users = await fetchUsers(signal);
   return users[0] ?? null;
@@ -148,6 +200,16 @@ export async function fetchClothingItem(id: number, signal?: AbortSignal) {
   }
 
   return (await response.json()) as ClothingItem;
+}
+
+export async function fetchOutfitUpload(id: number, signal?: AbortSignal) {
+  const response = await fetch(`${API_BASE_URL}/outfit_uploads/${id}`, { signal });
+
+  if (!response.ok) {
+    throw await buildApiError(response);
+  }
+
+  return (await response.json()) as OutfitUpload;
 }
 
 export async function saveClothingItem(
@@ -189,6 +251,29 @@ export async function createClothingItem(
   }
 
   return (await response.json()) as ClothingItem;
+}
+
+export async function createOutfitUpload(
+  userId: number,
+  photoOptions: OutfitUploadPhotoOptions,
+) {
+  const formData = new FormData();
+  formData.append("outfit_upload[user_id]", String(userId));
+  formData.append("outfit_upload[source_photo]", photoOptions.photo);
+
+  const response = await fetch(`${API_BASE_URL}/outfit_uploads`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response);
+  }
+
+  return (await response.json()) as OutfitUpload;
 }
 
 export async function destroyClothingItem(id: number) {

@@ -1,6 +1,6 @@
 # Project Structure Index
 
-Last updated: 2026-04-21
+Last updated: 2026-05-02
 
 This file is intentionally concise and focused on repository structure.
 For project background, roadmap, and references, see wiki.md.
@@ -22,8 +22,9 @@ project-closet-organizer/
 
 ## Backend (back-end)
 
-- app/models: User and ClothingItem domain models
-- app/controllers: JSON CRUD controllers
+- app/models: user, clothing_item, outfit_upload, and outfit_detection domain models
+- app/controllers: JSON CRUD controllers plus outfit upload handling
+- app/services/outfit_photo_detector.rb: OpenRouter-powered outfit detection service
 - config/routes.rb: API route definitions
 - db/seeds.rb: seed data generation
 - test/: model and integration tests
@@ -31,8 +32,9 @@ project-closet-organizer/
 ## Frontend (front-end)
 
 - src/app/App.tsx: route handling and top-level view composition
-- src/app/components/: page and UI components
+- src/app/components/: routed pages, shared presentation components, and UI primitives
 - src/app/lib/closet.ts: API calls and shared types/helpers
+- src/app/lib/useItemPhotoState.ts: shared photo upload state management
 - src/styles/: fonts, theme, and global styling
 
 ## CI
@@ -41,5 +43,5 @@ project-closet-organizer/
 
 ## Docs
 
-- README.md: MVP, team info, deployment link, communication rules, setup
-- wiki.md: task context, Miro link, future features, references, ideas
+- README.md: overview, current capabilities, setup, and documentation map
+- wiki.md: background, scope notes, roadmap, references, and ideas

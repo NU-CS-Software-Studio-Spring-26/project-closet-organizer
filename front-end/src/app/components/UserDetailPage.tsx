@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, ChevronRight, Plus, Shirt } from "lucide-react";
+import { ArrowLeft, ChevronRight, Shirt } from "lucide-react";
 import {
+  CreateItemMode,
   fetchUser,
   formatDisplaySize,
   formatPossessive,
@@ -9,13 +10,14 @@ import {
   titleize,
   User,
 } from "../lib/closet";
+import { AddItemMenu } from "./AddItemMenu";
 
 interface UserDetailPageProps {
   userId: number;
   initialUser?: User | null;
   onBack: () => void;
   onOpenItem: (itemId: number) => void;
-  onAddItem: (userId: number) => void;
+  onAddItem: (userId: number, mode: CreateItemMode) => void;
 }
 
 export function UserDetailPage({
@@ -168,14 +170,9 @@ export function UserDetailPage({
                   Click any item to jump straight into its editable detail page.
                 </p>
               </div>
-              <button
-                onClick={() => onAddItem(user.id)}
-                className="inline-flex items-center gap-2 px-4 py-3 border border-border hover:border-foreground transition-colors shrink-0"
-                style={{ fontFamily: "Outfit, sans-serif" }}
-              >
-                <Plus className="w-4 h-4" />
-                Add Item
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+                <AddItemMenu onSelectMode={(mode) => onAddItem(user.id, mode)} />
+              </div>
             </div>
 
             <div className="space-y-4">

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_22_183006) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_01_123000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -50,6 +50,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_22_183006) do
     t.index ["user_id"], name: "index_clothing_items_on_user_id"
   end
 
+  create_table "outfit_detections", force: :cascade do |t|
+    t.string "category", null: false
+    t.float "confidence"
+    t.datetime "created_at", null: false
+    t.json "details"
+    t.integer "outfit_upload_id", null: false
+    t.integer "position", default: 0, null: false
+    t.string "suggested_name"
+    t.datetime "updated_at", null: false
+    t.index ["outfit_upload_id"], name: "index_outfit_detections_on_outfit_upload_id"
+  end
+
+  create_table "outfit_uploads", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "detected_at"
+    t.text "error_message"
+    t.string "provider"
+    t.json "raw_response"
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.string "vision_model"
+    t.index ["user_id"], name: "index_outfit_uploads_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "password_digest"
@@ -61,4 +86,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_22_183006) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "clothing_items", "users"
+  add_foreign_key "outfit_detections", "outfit_uploads"
+  add_foreign_key "outfit_uploads", "users"
 end

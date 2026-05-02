@@ -10,6 +10,7 @@ Rails.application.routes.draw do
 
     resources :users, except: %i[new edit]
     resources :clothing_items, except: %i[new edit]
+    resources :outfit_uploads, only: %i[create show]
   end
 
   get "*path", to: "fallback#index", constraints: ->(req) { !req.xhr? && req.format.html? }

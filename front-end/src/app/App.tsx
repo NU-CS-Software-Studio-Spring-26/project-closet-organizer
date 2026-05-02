@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowRight, Plus, Users } from "lucide-react";
+import { ArrowRight, Users } from "lucide-react";
+import { AddItemMenu } from "./components/AddItemMenu";
 import { ClothingCard } from "./components/ClothingCard";
 import { CreateItemPage } from "./components/CreateItemPage";
 import { ItemDetailPage } from "./components/ItemDetailPage";
@@ -8,6 +9,7 @@ import { UserDetailPage } from "./components/UserDetailPage";
 import { UsersDirectoryPage } from "./components/UsersDirectoryPage";
 import {
   ClothingItem,
+  CreateItemMode,
   fetchClosetOwner,
   formatPossessive,
   formatPreferredStyle,
@@ -40,6 +42,7 @@ interface UserRouteState {
 interface NewItemRouteState {
   kind: "new-item";
   userId: number | null;
+  mode: CreateItemMode;
 }
 
 type AppRoute =
@@ -49,6 +52,10 @@ type AppRoute =
   | UsersRouteState
   | UserRouteState
   | NewItemRouteState;
+
+function parseCreateItemMode(value: string | null): CreateItemMode {
+  return value === "image" ? "image" : "manual";
+}
 
 function getRouteFromLocation(
   pathname = window.location.pathname,
@@ -61,7 +68,20 @@ function getRouteFromLocation(
 
   if (normalizedPath === "/items/new") {
     const userId = query.get("userId");
-    return { kind: "new-item", userId: userId ? Number(userId) : null };
+    return {
+      kind: "new-item",
+      userId: userId ? Number(userId) : null,
+      mode: parseCreateItemMode(query.get("mode")),
+    };
+  }
+
+  if (normalizedPath === "/outfits/import") {
+    const userId = query.get("userId");
+    return {
+      kind: "new-item",
+      userId: userId ? Number(userId) : null,
+      mode: "image",
+    };
   }
 
   if (normalizedPath === "/closet") {
@@ -240,7 +260,7 @@ export default function App() {
         initialUser={selectedUser}
         onBack={() => navigateTo("/users")}
         onOpenItem={(itemId) => navigateTo(`/items/${itemId}`)}
-        onAddItem={(userId) => navigateTo(`/items/new?userId=${userId}`)}
+        onAddItem={(userId, mode) => navigateTo(`/items/new?userId=${userId}&mode=${mode}`)}
       />
     );
   }
@@ -253,7 +273,9 @@ export default function App() {
     return (
       <div className="min-h-screen bg-background">
         <CreateItemPage
+          key={`${targetUserId ?? "none"}-${route.mode}`}
           userId={targetUserId}
+          initialMode={route.mode}
           initialUser={targetUser}
           onBack={() => {
             if (route.userId) {
@@ -340,21 +362,16 @@ export default function App() {
               transition={{ duration: 0.6 }}
               className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
             >
-              <button
-                onClick={() => {
+              <AddItemMenu
+                disabled={!user}
+                onSelectMode={(mode) => {
                   if (!user) {
                     return;
                   }
 
-                  navigateTo(`/items/new?userId=${user.id}`);
+                  navigateTo(`/items/new?userId=${user.id}&mode=${mode}`);
                 }}
-                disabled={!user}
-                className="flex items-center justify-center gap-3 px-5 py-3 border border-border hover:border-foreground transition-colors disabled:opacity-50"
-                style={{ fontFamily: "Outfit, sans-serif" }}
-              >
-                <Plus className="w-4 h-4" />
-                Add Item
-              </button>
+              />
               <button
                 onClick={() => navigateTo("/users")}
                 className="flex items-center justify-center gap-3 px-5 py-3 border border-border hover:border-foreground transition-colors"

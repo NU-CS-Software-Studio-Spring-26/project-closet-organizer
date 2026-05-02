@@ -52,4 +52,29 @@ class ApplicationController < ActionController::API
     payload["user"] = user_payload(clothing_item.user, include_items: false) if include_user
     payload
   end
+
+  def outfit_upload_payload(outfit_upload)
+    payload = outfit_upload.serializable_hash(
+      only: %i[
+        id
+        user_id
+        provider
+        vision_model
+        error_message
+        detected_at
+        created_at
+        updated_at
+      ]
+    )
+    payload["status"] = outfit_upload.status
+    payload["source_photo_url"] = outfit_upload.source_photo.attached? ? url_for(outfit_upload.source_photo) : nil
+    payload["detections"] = outfit_upload.outfit_detections.map { |detection| outfit_detection_payload(detection) }
+    payload
+  end
+
+  def outfit_detection_payload(outfit_detection)
+    outfit_detection.serializable_hash(
+      only: %i[id outfit_upload_id category confidence suggested_name details position created_at updated_at]
+    )
+  end
 end
