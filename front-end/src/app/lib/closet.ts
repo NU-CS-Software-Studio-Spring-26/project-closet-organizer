@@ -24,6 +24,13 @@ export interface ClothingItem {
   updated_at?: string;
   tags: ClothingItemTags;
   image_url?: string | null;
+  original_image_url?: string | null;
+  cleaned_image_url?: string | null;
+  clean_image_status?: "idle" | "processing" | "succeeded" | "failed";
+  clean_image_error_message?: string | null;
+  clean_image_provider?: string | null;
+  clean_image_model?: string | null;
+  clean_image_generated_at?: string | null;
   user?: UserSummary;
 }
 
@@ -43,9 +50,31 @@ export interface OutfitDetection {
     style_guess?: string;
     notes?: string;
   };
+  crop_status: "pending" | "refined" | "verified" | "rejected" | "failed";
+  crop_confidence?: number | null;
+  crop_quality_score?: number | null;
+  crop_notes?: string | null;
+  crop_attempts?: number;
+  bounding_box?: OutfitDetectionBoundingBox | null;
+  coarse_box?: OutfitDetectionBoundingBox | null;
+  refined_box?: OutfitDetectionBoundingBox | null;
+  final_box?: OutfitDetectionBoundingBox | null;
+  cleaned_image_url?: string | null;
+  clean_image_status?: "idle" | "processing" | "succeeded" | "failed";
+  clean_image_error_message?: string | null;
+  clean_image_provider?: string | null;
+  clean_image_model?: string | null;
+  clean_image_generated_at?: string | null;
   position: number;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface OutfitDetectionBoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export interface OutfitUpload {
@@ -77,11 +106,19 @@ export interface ClothingItemFormValues {
 
 export interface ClothingItemPhotoOptions {
   photo?: File | null;
+  crop?: OutfitDetectionBoundingBox | null;
+  sourceOutfitDetectionId?: number | null;
   removePhoto?: boolean;
 }
 
 export interface OutfitUploadPhotoOptions {
   photo: File;
+}
+
+export interface TemporaryCleanImageResult {
+  content_type: string;
+  data_url: string;
+  filename: string;
 }
 
 export function emptyClothingItemFormValues(): ClothingItemFormValues {
@@ -165,6 +202,10 @@ export function toClothingItemFormValuesFromDetection(
     brand: "",
     color: detection.details.dominant_color?.trim() ?? "",
   };
+}
+
+export function preferredDetectionBox(detection: OutfitDetection) {
+  return detection.final_box ?? detection.refined_box ?? detection.coarse_box ?? detection.bounding_box ?? null;
 }
 
 export async function fetchClosetOwner(signal?: AbortSignal) {
@@ -289,6 +330,61 @@ export async function destroyClothingItem(id: number) {
   }
 }
 
+export async function generateClothingItemCleanImage(id: number) {
+  const response = await fetch(`${API_BASE_URL}/clothing_items/${id}/generate_clean_image`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response);
+  }
+
+  return (await response.json()) as ClothingItem;
+}
+
+export async function generateOutfitDetectionCleanImage(id: number) {
+  const response = await fetch(`${API_BASE_URL}/outfit_detections/${id}/generate_clean_image`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response);
+  }
+
+  return (await response.json()) as OutfitDetection;
+}
+
+export async function previewCleanImage(photo: File) {
+  const formData = new FormData();
+  formData.append("image_variant[source_photo]", photo);
+
+  const response = await fetch(`${API_BASE_URL}/image_variants/preview`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response);
+  }
+
+  return (await response.json()) as TemporaryCleanImageResult;
+}
+
+export async function fileFromDataUrl(dataUrl: string, filename: string, contentType?: string) {
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  return new File([blob], filename, { type: contentType || blob.type || "image/png" });
+}
+
 async function buildApiError(response: Response) {
   try {
     const payload = (await response.json()) as { error?: string; errors?: string[] };
@@ -318,6 +414,20 @@ function buildClothingItemFormData(
 
   if (photoOptions.photo) {
     formData.append("clothing_item[photo]", photoOptions.photo);
+  }
+
+  if (photoOptions.sourceOutfitDetectionId) {
+    formData.append(
+      "clothing_item[source_outfit_detection_id]",
+      String(photoOptions.sourceOutfitDetectionId),
+    );
+  }
+
+  if (photoOptions.crop) {
+    formData.append("clothing_item[crop_x]", String(photoOptions.crop.x));
+    formData.append("clothing_item[crop_y]", String(photoOptions.crop.y));
+    formData.append("clothing_item[crop_width]", String(photoOptions.crop.width));
+    formData.append("clothing_item[crop_height]", String(photoOptions.crop.height));
   }
 
   if (photoOptions.removePhoto) {

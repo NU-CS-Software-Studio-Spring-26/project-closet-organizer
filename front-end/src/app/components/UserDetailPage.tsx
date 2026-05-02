@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { ArrowLeft, ChevronRight, Shirt } from "lucide-react";
 import {
-  CreateItemMode,
   fetchUser,
   formatDisplaySize,
   formatPossessive,
@@ -10,14 +9,12 @@ import {
   titleize,
   User,
 } from "../lib/closet";
-import { AddItemMenu } from "./AddItemMenu";
 
 interface UserDetailPageProps {
   userId: number;
   initialUser?: User | null;
   onBack: () => void;
   onOpenItem: (itemId: number) => void;
-  onAddItem: (userId: number, mode: CreateItemMode) => void;
 }
 
 export function UserDetailPage({
@@ -25,7 +22,6 @@ export function UserDetailPage({
   initialUser,
   onBack,
   onOpenItem,
-  onAddItem,
 }: UserDetailPageProps) {
   const [user, setUser] = useState<User | null>(initialUser ?? null);
   const [isLoading, setIsLoading] = useState(!initialUser);
@@ -157,7 +153,7 @@ export function UserDetailPage({
             transition={{ duration: 0.45, delay: 0.06 }}
             className="space-y-6"
           >
-            <div className="flex items-end justify-between gap-4">
+            <div>
               <div>
                 <p
                   className="uppercase tracking-[0.3em] text-xs text-muted-foreground mb-3"
@@ -169,9 +165,6 @@ export function UserDetailPage({
                 <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
                   Click any item to jump straight into its editable detail page.
                 </p>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3 shrink-0">
-                <AddItemMenu onSelectMode={(mode) => onAddItem(user.id, mode)} />
               </div>
             </div>
 

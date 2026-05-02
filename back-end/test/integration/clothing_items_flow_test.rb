@@ -60,6 +60,123 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
     assert_match %r{/rails/active_storage/}, response_json["image_url"]
   end
 
+  test "can create a clothing item with a cropped photo" do
+    assert_difference("ClothingItem.count", 1) do
+      post clothing_items_url, params: {
+        clothing_item: {
+          name: "Cropped Shirt",
+          user_id: @user.id,
+          size: "medium",
+          color: "white",
+          photo: item_photo_upload_png,
+          crop_x: "0.1",
+          crop_y: "0.1",
+          crop_width: "0.5",
+          crop_height: "0.5"
+        }
+      }
+    end
+
+    assert_response :created
+
+    created_item = ClothingItem.order(:created_at).last
+    assert_predicate created_item.photo, :attached?
+    assert_equal "image/png", created_item.photo.blob.content_type
+    assert_match(/crop\.png\z/, created_item.photo.blob.filename.to_s)
+  end
+
+  test "can create a clothing item from a verified outfit detection crop" do
+    upload = OutfitUpload.new(user: @user, status: :succeeded, provider: "openrouter")
+    upload.source_photo.attach(item_photo_upload_png)
+    upload.save!
+    detection = upload.outfit_detections.create!(
+      category: "shirt",
+      confidence: 0.91,
+      suggested_name: "Verified Shirt",
+      details: { dominant_color: "white" },
+      coarse_bbox_x: 0.12,
+      coarse_bbox_y: 0.1,
+      coarse_bbox_width: 0.42,
+      coarse_bbox_height: 0.48,
+      refined_bbox_x: 0.14,
+      refined_bbox_y: 0.12,
+      refined_bbox_width: 0.36,
+      refined_bbox_height: 0.42,
+      final_bbox_x: 0.15,
+      final_bbox_y: 0.13,
+      final_bbox_width: 0.34,
+      final_bbox_height: 0.4,
+      crop_status: :verified,
+      crop_attempts: 2,
+      position: 0
+    )
+
+    assert_difference("ClothingItem.count", 1) do
+      post clothing_items_url, params: {
+        clothing_item: {
+          name: "Verified Shirt",
+          user_id: @user.id,
+          size: "medium",
+          color: "white",
+          source_outfit_detection_id: detection.id
+        }
+      }
+    end
+
+    assert_response :created
+
+    created_item = ClothingItem.order(:created_at).last
+    assert_predicate created_item.photo, :attached?
+    assert_equal "image/png", created_item.photo.blob.content_type
+    assert_match(/crop\.png\z/, created_item.photo.blob.filename.to_s)
+  end
+
+  test "prefers a cleaned outfit detection image when creating a clothing item" do
+    upload = OutfitUpload.new(user: @user, status: :succeeded, provider: "openrouter")
+    upload.source_photo.attach(item_photo_upload_png)
+    upload.save!
+    detection = upload.outfit_detections.create!(
+      category: "shirt",
+      confidence: 0.91,
+      suggested_name: "Verified Shirt",
+      details: { dominant_color: "white" },
+      coarse_bbox_x: 0.12,
+      coarse_bbox_y: 0.1,
+      coarse_bbox_width: 0.42,
+      coarse_bbox_height: 0.48,
+      refined_bbox_x: 0.14,
+      refined_bbox_y: 0.12,
+      refined_bbox_width: 0.36,
+      refined_bbox_height: 0.42,
+      final_bbox_x: 0.15,
+      final_bbox_y: 0.13,
+      final_bbox_width: 0.34,
+      final_bbox_height: 0.4,
+      crop_status: :verified,
+      crop_attempts: 2,
+      position: 0
+    )
+    detection.cleaned_photo.attach(item_photo_upload_png)
+
+    assert_difference("ClothingItem.count", 1) do
+      post clothing_items_url, params: {
+        clothing_item: {
+          name: "Verified Shirt",
+          user_id: @user.id,
+          size: "medium",
+          color: "white",
+          source_outfit_detection_id: detection.id
+        }
+      }
+    end
+
+    assert_response :created
+
+    created_item = ClothingItem.order(:created_at).last
+    assert_predicate created_item.photo, :attached?
+    assert_match(/item-photo\.png\z/, created_item.photo.blob.filename.to_s)
+  end
+
   test "can update a clothing item" do
     patch clothing_item_url(@clothing_item), params: {
       clothing_item: {
@@ -109,6 +226,21 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
     assert_nil response_json["image_url"]
   end
 
+  test "can generate a clean image for an existing clothing item photo" do
+    @clothing_item.photo.attach(item_photo_upload_png)
+
+    with_image_cleaner_stub do
+      post generate_clean_image_clothing_item_url(@clothing_item), as: :json
+    end
+
+    assert_response :success
+
+    @clothing_item.reload
+    assert_predicate @clothing_item.cleaned_photo, :attached?
+    assert_equal "succeeded", response_json["clean_image_status"]
+    assert_equal response_json["cleaned_image_url"], response_json["image_url"]
+  end
+
   test "can delete a clothing item" do
     assert_difference("ClothingItem.count", -1) do
       delete clothing_item_url(@clothing_item), as: :json
@@ -121,5 +253,34 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
 
   def item_photo_upload
     Rack::Test::UploadedFile.new(file_fixture("item-photo.svg"), "image/svg+xml")
+  end
+
+  def item_photo_upload_png
+    Rack::Test::UploadedFile.new(file_fixture("item-photo.png"), "image/png")
+  end
+
+  def with_image_cleaner_stub
+    original = OpenrouterImageCleaner.method(:call)
+    fixture_path = file_fixture("item-photo.png")
+
+    OpenrouterImageCleaner.singleton_class.send(:define_method, :call) do |_source_photo, prompt_context: {}|
+      tempfile = Tempfile.new([ "cleaned-photo", ".png" ])
+      tempfile.binmode
+      tempfile.write(File.binread(fixture_path))
+      tempfile.rewind
+
+      {
+        tempfile: tempfile,
+        filename: "cleaned-photo.png",
+        content_type: "image/png",
+        provider: "openrouter",
+        model: "google/gemini-2.5-flash-image",
+        raw_response: { "id" => "img_123", "prompt_context" => prompt_context }
+      }
+    end
+
+    yield
+  ensure
+    OpenrouterImageCleaner.singleton_class.send(:define_method, :call, original)
   end
 end

@@ -7,10 +7,10 @@ import {
   formatPossessive,
   OutfitDetection,
   OutfitUpload,
+  buildPlaceholderLabel,
   titleize,
   User,
 } from "../lib/closet";
-import { ItemHeroPreview } from "./ItemHeroPreview";
 import { ItemPhotoField } from "./ItemPhotoField";
 import { useItemPhotoState } from "../lib/useItemPhotoState";
 
@@ -100,6 +100,18 @@ export function OutfitImportPage({ userId, initialUser, onBack }: OutfitImportPa
     photoState.reset();
   }
 
+  function handlePhotoChange(file: File | null) {
+    setOutfitUpload(null);
+    setErrorMessage("");
+    photoState.updateSelectedFile(file);
+  }
+
+  function handleClearSelection() {
+    setOutfitUpload(null);
+    setErrorMessage("");
+    photoState.clearSelectedFile();
+  }
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -142,6 +154,12 @@ export function OutfitImportPage({ userId, initialUser, onBack }: OutfitImportPa
   const secondaryDetail = outfitUpload?.vision_model
     ? `Detected with ${outfitUpload.vision_model}`
     : `Importing for ${formatPossessive(titleize(user.username))}`;
+  const previewUrl = photoState.imageUrl ?? outfitUpload?.source_photo_url ?? null;
+  const previewTitle =
+    detectionCount > 0
+      ? `${detectionCount} detected item${detectionCount === 1 ? "" : "s"}`
+      : "Outfit Photo";
+  const placeholderLabel = buildPlaceholderLabel(titleize(user.username));
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-12">
@@ -153,83 +171,115 @@ export function OutfitImportPage({ userId, initialUser, onBack }: OutfitImportPa
         Back
       </button>
 
-      <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr] items-start">
-        <ItemHeroPreview
-          imageUrl={photoState.imageUrl ?? outfitUpload?.source_photo_url ?? null}
-          label="Outfit Import"
-          primaryDetail={statusLabel}
-          secondaryDetail={secondaryDetail}
-          title={detectionCount > 0 ? `${detectionCount} detected item${detectionCount === 1 ? "" : "s"}` : "Upload an outfit photo"}
-        />
+      <motion.form
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45 }}
+        onSubmit={handleSubmit}
+        className="space-y-6"
+      >
+        <div>
+          <p className="uppercase tracking-[0.3em] text-xs text-muted-foreground mb-3">
+            Outfit Detection
+          </p>
+          <h2 className="mb-1">Import From Photo</h2>
+          <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
+            Upload one full-outfit image, review the preview, then run detection when you are
+            ready.
+          </p>
+        </div>
 
-        <motion.form
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.06 }}
-          onSubmit={handleSubmit}
-          className="space-y-6"
-        >
-          <div>
-            <p className="uppercase tracking-[0.3em] text-xs text-muted-foreground mb-3">
-              Outfit Detection
-            </p>
-            <h2 className="mb-1">Import From Photo</h2>
-            <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
-              Upload one full-outfit image and we will detect visible pieces using OpenRouter with
-              `openai/gpt-4.1-mini`.
-            </p>
+        {errorMessage && (
+          <div className="border border-destructive/20 bg-destructive/5 p-4 text-sm">
+            {errorMessage}
           </div>
+        )}
 
-          {errorMessage && (
-            <div className="border border-destructive/20 bg-destructive/5 p-4 text-sm">
-              {errorMessage}
+        {outfitUpload?.status === "failed" && outfitUpload.error_message && (
+          <div className="border border-destructive/20 bg-destructive/5 p-4 text-sm">
+            {outfitUpload.error_message}
+          </div>
+        )}
+
+        <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)] items-start">
+          <div className="space-y-4">
+            <div className="relative aspect-[4/5] overflow-hidden border border-border bg-gradient-to-br from-stone-100 via-neutral-50 to-stone-200">
+              {previewUrl ? (
+                <img src={previewUrl} alt={previewTitle} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <div className="h-[4.5rem] w-[4.5rem] border border-border rounded-full flex items-center justify-center bg-white/70 text-lg tracking-[0.24em] text-muted-foreground">
+                    {placeholderLabel}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
 
-          {outfitUpload?.status === "failed" && outfitUpload.error_message && (
-            <div className="border border-destructive/20 bg-destructive/5 p-4 text-sm">
-              {outfitUpload.error_message}
+            <div className="border border-border bg-card p-5">
+              <p className="uppercase tracking-[0.2em] text-xs text-muted-foreground mb-3">
+                Preview Status
+              </p>
+              <p className="mb-2" style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "1.75rem" }}>
+                {previewTitle}
+              </p>
+              <p className="text-sm text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
+                {statusLabel}
+              </p>
+              <p className="text-sm text-muted-foreground mt-2" style={{ fontFamily: "Outfit, sans-serif" }}>
+                {secondaryDetail}
+              </p>
             </div>
-          )}
-
-          <ItemPhotoField
-            description="For the first version, we store the photo and return structured detections only."
-            inputRef={photoState.inputRef}
-            onClearSelection={photoState.clearSelectedFile}
-            onFileChange={photoState.updateSelectedFile}
-            selectedFileName={photoState.selectedFile?.name}
-          />
-
-          <div className="border border-border bg-card p-5">
-            <p className="uppercase tracking-[0.2em] text-xs text-muted-foreground mb-3">
-              What We Save
-            </p>
-            <p className="text-sm text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
-              Category, confidence, suggested item name, color guess, material guess, style guess,
-              and notes for each visible piece.
-            </p>
           </div>
 
-          <div className="border-t border-border pt-5 flex items-center justify-between gap-4">
-            <button
-              type="button"
-              onClick={resetFlow}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Reset
-            </button>
+          <div className="space-y-5">
+            <ItemPhotoField
+              description="Choose an outfit image first. Detection only runs after you click the button below."
+              inputRef={photoState.inputRef}
+              onClearSelection={handleClearSelection}
+              onFileChange={handlePhotoChange}
+              selectedFileName={photoState.selectedFile?.name}
+            />
 
-            <button
-              type="submit"
-              disabled={isDetecting}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50"
-            >
-              <ScanSearch className="w-4 h-4" />
-              {isDetecting ? "Detecting..." : "Detect Items"}
-            </button>
+            <div className="border border-border bg-card p-5">
+              <p className="uppercase tracking-[0.2em] text-xs text-muted-foreground mb-3">
+                What We Save
+              </p>
+              <p className="text-sm text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
+                Category, confidence, suggested item name, color guess, material guess, style
+                guess, and notes for each visible piece.
+              </p>
+            </div>
+
+            <div className="border border-border bg-card p-5">
+              <p className="uppercase tracking-[0.2em] text-xs text-muted-foreground mb-3">
+                Detection
+              </p>
+              <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "Outfit, sans-serif" }}>
+                This step is manual. Uploading or changing the image will not trigger analysis until
+                you press detect.
+              </p>
+              <div className="flex items-center justify-between gap-4">
+                <button
+                  type="button"
+                  onClick={resetFlow}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Reset
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isDetecting || !photoState.selectedFile}
+                  className="inline-flex items-center gap-2 px-5 py-3 bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50"
+                >
+                  <ScanSearch className="w-4 h-4" />
+                  {isDetecting ? "Detecting..." : "Detect Image Elements"}
+                </button>
+              </div>
+            </div>
           </div>
-        </motion.form>
-      </div>
+        </div>
+      </motion.form>
 
       {outfitUpload && (
         <div className="mt-12 space-y-5">

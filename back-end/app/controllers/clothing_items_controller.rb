@@ -1,5 +1,5 @@
 class ClothingItemsController < ApplicationController
-  before_action :set_clothing_item, only: %i[show update destroy]
+  before_action :set_clothing_item, only: %i[show update destroy generate_clean_image]
 
   def index
     @clothing_items = ClothingItem.includes(:user).order(:name)
@@ -11,28 +11,83 @@ class ClothingItemsController < ApplicationController
   end
 
   def create
-    @clothing_item = ClothingItem.new(clothing_item_params)
+    temporary_files = []
+    @clothing_item = ClothingItem.new(clothing_item_attributes)
+    attach_photo_from_request(@clothing_item, temporary_files)
 
     if @clothing_item.save
-      @clothing_item.photo.purge if remove_photo_requested?
+      remove_all_item_photos(@clothing_item) if remove_photo_requested?
       render json: clothing_item_payload(@clothing_item), status: :created
     else
       render_validation_errors(@clothing_item)
     end
+  ensure
+    cleanup_temporary_files(temporary_files)
   end
 
   def update
-    if @clothing_item.update(clothing_item_params)
-      @clothing_item.photo.purge if remove_photo_requested?
+    temporary_files = []
+    @clothing_item.assign_attributes(clothing_item_attributes)
+    attach_photo_from_request(@clothing_item, temporary_files)
+
+    if @clothing_item.errors.empty? && @clothing_item.save
+      remove_all_item_photos(@clothing_item) if remove_photo_requested?
       render json: clothing_item_payload(@clothing_item)
     else
       render_validation_errors(@clothing_item)
     end
+  ensure
+    cleanup_temporary_files(temporary_files)
   end
 
   def destroy
     @clothing_item.destroy
     head :no_content
+  end
+
+  def generate_clean_image
+    temporary_files = []
+
+    unless @clothing_item.source_photo_for_cleaning.attached?
+      render json: { error: "This item does not have a photo to clean." }, status: :unprocessable_content
+      return
+    end
+
+    @clothing_item.update!(
+      clean_image_status: :processing,
+      clean_image_error_message: nil
+    )
+
+    generated = OpenrouterImageCleaner.call(
+      @clothing_item.source_photo_for_cleaning,
+      prompt_context: clothing_item_clean_prompt_context(@clothing_item)
+    )
+    generated_tempfile = generated.fetch(:tempfile)
+    generated_tempfile.rewind
+    temporary_files << generated_tempfile
+
+    @clothing_item.cleaned_photo.attach(
+      io: generated_tempfile,
+      filename: generated.fetch(:filename),
+      content_type: generated.fetch(:content_type)
+    )
+    @clothing_item.update!(
+      clean_image_status: :succeeded,
+      clean_image_error_message: nil,
+      clean_image_provider: generated.fetch(:provider),
+      clean_image_model: generated.fetch(:model),
+      clean_image_generated_at: Time.current
+    )
+
+    render json: clothing_item_payload(@clothing_item.reload)
+  rescue StandardError => error
+    @clothing_item.update(
+      clean_image_status: :failed,
+      clean_image_error_message: error.message
+    )
+    render json: { error: error.message }, status: :unprocessable_content
+  ensure
+    cleanup_temporary_files(temporary_files)
   end
 
   private
@@ -41,11 +96,151 @@ class ClothingItemsController < ApplicationController
     @clothing_item = ClothingItem.find(params[:id])
   end
 
-  def clothing_item_params
-    base_params = params.require(:clothing_item).permit(:name, :size, :date, :user_id, :photo)
+  def clothing_item_attributes
+    base_params = params.require(:clothing_item).permit(:name, :size, :date, :user_id)
     tag_params = params.require(:clothing_item).permit(:material, :season, :style, :brand, :color).to_h.compact_blank
 
     base_params.merge(tags: tag_params)
+  end
+
+  def attach_photo_from_request(clothing_item, temporary_files)
+    if params.dig(:clothing_item, :source_outfit_detection_id).present?
+      return if clothing_item.errors.any?
+
+      if source_outfit_detection.present?
+        reset_clean_image_state(clothing_item)
+        attach_photo_from_detection(clothing_item, temporary_files)
+      end
+
+      return
+    end
+
+    uploaded_photo = params.dig(:clothing_item, :photo)
+    return if uploaded_photo.blank?
+
+    bounding_box = normalized_crop_box
+    return if clothing_item.errors.any?
+
+    reset_clean_image_state(clothing_item)
+
+    if bounding_box
+      attach_cropped_photo(clothing_item, uploaded_photo, bounding_box, temporary_files)
+    else
+      clothing_item.photo.attach(uploaded_photo)
+    end
+  rescue MiniMagick::Error, ImageProcessing::Error, ArgumentError => error
+    clothing_item.errors.add(:photo, "could not be cropped: #{error.message}")
+  end
+
+  def attach_cropped_photo(clothing_item, uploaded_photo, bounding_box, temporary_files)
+    cropped_photo = ClothingItemPhotoCropper.call(uploaded_photo, bounding_box)
+    cropped_tempfile = cropped_photo.fetch(:tempfile)
+    cropped_tempfile.rewind
+    temporary_files << cropped_tempfile
+
+    clothing_item.photo.attach(
+      io: cropped_tempfile,
+      filename: cropped_photo.fetch(:filename),
+      content_type: cropped_photo.fetch(:content_type)
+    )
+  end
+
+  def attach_photo_from_detection(clothing_item, temporary_files)
+    unless source_outfit_detection.crop_ready?
+      clothing_item.errors.add(:base, "Selected detection does not have a verified crop yet")
+      return
+    end
+
+    if source_outfit_detection.cleaned_photo.attached?
+      clothing_item.photo.attach(
+        io: StringIO.new(source_outfit_detection.cleaned_photo.download),
+        filename: source_outfit_detection.cleaned_photo.blob.filename.to_s,
+        content_type: source_outfit_detection.cleaned_photo.blob.content_type
+      )
+      return
+    end
+
+    cropped_photo = ClothingItemPhotoCropper.call(
+      source_outfit_detection.outfit_upload.source_photo,
+      source_outfit_detection.usable_crop_box
+    )
+    cropped_tempfile = cropped_photo.fetch(:tempfile)
+    cropped_tempfile.rewind
+    temporary_files << cropped_tempfile
+
+    clothing_item.photo.attach(
+      io: cropped_tempfile,
+      filename: cropped_photo.fetch(:filename),
+      content_type: cropped_photo.fetch(:content_type)
+    )
+  end
+
+  def normalized_crop_box
+    raw_values = {
+      x: params.dig(:clothing_item, :crop_x),
+      y: params.dig(:clothing_item, :crop_y),
+      width: params.dig(:clothing_item, :crop_width),
+      height: params.dig(:clothing_item, :crop_height)
+    }
+
+    return nil if raw_values.values.all?(&:blank?)
+    return invalid_crop_box if raw_values.values.any?(&:blank?)
+
+    box = raw_values.transform_values { |value| Float(value) }
+    return invalid_crop_box unless box.values.all?(&:finite?)
+    return invalid_crop_box if box[:x].negative? || box[:y].negative?
+    return invalid_crop_box unless box[:width].positive? && box[:height].positive?
+    return invalid_crop_box if box[:x] + box[:width] > 1.0 || box[:y] + box[:height] > 1.0
+
+    box
+  rescue ArgumentError, TypeError
+    invalid_crop_box
+  end
+
+  def invalid_crop_box
+    @clothing_item.errors.add(:base, "Crop box is invalid")
+    nil
+  end
+
+  def cleanup_temporary_files(temporary_files)
+    Array(temporary_files).each(&:close!)
+  end
+
+  def reset_clean_image_state(clothing_item)
+    clothing_item.cleaned_photo.purge if clothing_item.cleaned_photo.attached?
+    clothing_item.clean_image_status = :idle
+    clothing_item.clean_image_error_message = nil
+    clothing_item.clean_image_provider = nil
+    clothing_item.clean_image_model = nil
+    clothing_item.clean_image_generated_at = nil
+  end
+
+  def remove_all_item_photos(clothing_item)
+    clothing_item.photo.purge if clothing_item.photo.attached?
+    reset_clean_image_state(clothing_item)
+    clothing_item.save! if clothing_item.persisted?
+  end
+
+  def clothing_item_clean_prompt_context(clothing_item)
+    {
+      name: clothing_item.name,
+      category: clothing_item.name,
+      color: clothing_item.tags["color"],
+      material: clothing_item.tags["material"],
+      style: clothing_item.tags["style"]
+    }.compact_blank
+  end
+
+  def source_outfit_detection
+    detection_id = params.dig(:clothing_item, :source_outfit_detection_id)
+    return @source_outfit_detection if defined?(@source_outfit_detection)
+    return @source_outfit_detection = nil if detection_id.blank?
+
+    @source_outfit_detection = OutfitDetection.find_by(id: detection_id)
+    return @source_outfit_detection if @source_outfit_detection
+
+    @clothing_item.errors.add(:base, "Selected detection could not be found")
+    nil
   end
 
   def remove_photo_requested?

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_01_123000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_02_133000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -40,6 +40,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_01_123000) do
   end
 
   create_table "clothing_items", force: :cascade do |t|
+    t.text "clean_image_error_message"
+    t.datetime "clean_image_generated_at"
+    t.string "clean_image_model"
+    t.string "clean_image_provider"
+    t.integer "clean_image_status", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "date"
     t.string "name"
@@ -51,12 +56,38 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_01_123000) do
   end
 
   create_table "outfit_detections", force: :cascade do |t|
+    t.float "bbox_height"
+    t.float "bbox_width"
+    t.float "bbox_x"
+    t.float "bbox_y"
     t.string "category", null: false
+    t.text "clean_image_error_message"
+    t.datetime "clean_image_generated_at"
+    t.string "clean_image_model"
+    t.string "clean_image_provider"
+    t.integer "clean_image_status", default: 0, null: false
+    t.float "coarse_bbox_height"
+    t.float "coarse_bbox_width"
+    t.float "coarse_bbox_x"
+    t.float "coarse_bbox_y"
     t.float "confidence"
     t.datetime "created_at", null: false
+    t.integer "crop_attempts", default: 0, null: false
+    t.float "crop_confidence"
+    t.text "crop_notes"
+    t.float "crop_quality_score"
+    t.integer "crop_status", default: 0, null: false
     t.json "details"
+    t.float "final_bbox_height"
+    t.float "final_bbox_width"
+    t.float "final_bbox_x"
+    t.float "final_bbox_y"
     t.integer "outfit_upload_id", null: false
     t.integer "position", default: 0, null: false
+    t.float "refined_bbox_height"
+    t.float "refined_bbox_width"
+    t.float "refined_bbox_x"
+    t.float "refined_bbox_y"
     t.string "suggested_name"
     t.datetime "updated_at", null: false
     t.index ["outfit_upload_id"], name: "index_outfit_detections_on_outfit_upload_id"

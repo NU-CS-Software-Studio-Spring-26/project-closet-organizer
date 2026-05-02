@@ -129,6 +129,11 @@ if [[ ! -x "$BACKEND_DIR/bin/dev" ]]; then
   exit 1
 fi
 
+if [[ ! -x "$BACKEND_DIR/bin/rails" ]]; then
+  echo "Missing executable Rails binary at $BACKEND_DIR/bin/rails" >&2
+  exit 1
+fi
+
 if [[ ! -f "$FRONTEND_DIR/package.json" ]]; then
   echo "Missing frontend package.json at $FRONTEND_DIR/package.json" >&2
   exit 1
@@ -140,6 +145,12 @@ load_env_file "$BACKEND_DIR/.env"
 load_env_file "$BACKEND_DIR/.env.local"
 load_env_file "$FRONTEND_DIR/.env"
 load_env_file "$FRONTEND_DIR/.env.local"
+
+echo "Running backend migrations"
+(
+  cd "$BACKEND_DIR"
+  ./bin/rails db:migrate
+)
 
 kill_matching_processes "$FRONTEND_DIR/node_modules/.bin/vite" "frontend dev server"
 kill_processes_on_port "$BACKEND_PORT" "backend"

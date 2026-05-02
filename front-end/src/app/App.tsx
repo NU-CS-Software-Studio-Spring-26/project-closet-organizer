@@ -7,6 +7,7 @@ import { CreateItemPage } from "./components/CreateItemPage";
 import { ItemDetailPage } from "./components/ItemDetailPage";
 import { UserDetailPage } from "./components/UserDetailPage";
 import { UsersDirectoryPage } from "./components/UsersDirectoryPage";
+import { stagePendingCreateItemImage } from "./lib/pendingCreateItemImage";
 import {
   ClothingItem,
   CreateItemMode,
@@ -260,7 +261,6 @@ export default function App() {
         initialUser={selectedUser}
         onBack={() => navigateTo("/users")}
         onOpenItem={(itemId) => navigateTo(`/items/${itemId}`)}
-        onAddItem={(userId, mode) => navigateTo(`/items/new?userId=${userId}&mode=${mode}`)}
       />
     );
   }
@@ -278,6 +278,11 @@ export default function App() {
           initialMode={route.mode}
           initialUser={targetUser}
           onBack={() => {
+            if (route.mode === "image") {
+              navigateTo("/closet");
+              return;
+            }
+
             if (route.userId) {
               navigateTo(`/users/${route.userId}`);
               return;
@@ -285,20 +290,26 @@ export default function App() {
 
             navigateTo("/closet");
           }}
-          onItemCreated={(nextItem) => {
+          onItemsCreated={(nextItems) => {
             setUser((current) => {
-              if (!current || current.id !== nextItem.user_id) {
+              if (!current || current.id !== targetUserId || nextItems.length === 0) {
                 return current;
               }
 
               return {
                 ...current,
-                clothing_items: [...current.clothing_items, nextItem].sort((left, right) =>
+                clothing_items: [...current.clothing_items, ...nextItems].sort((left, right) =>
                   left.name.localeCompare(right.name),
                 ),
               };
             });
-            navigateTo(`/items/${nextItem.id}`);
+
+            if (route.mode === "image") {
+              navigateTo("/closet");
+              return;
+            }
+
+            navigateTo(`/items/${nextItems[0].id}`);
           }}
         />
       </div>
@@ -364,12 +375,20 @@ export default function App() {
             >
               <AddItemMenu
                 disabled={!user}
-                onSelectMode={(mode) => {
+                onSelectImage={(file) => {
                   if (!user) {
                     return;
                   }
 
-                  navigateTo(`/items/new?userId=${user.id}&mode=${mode}`);
+                  stagePendingCreateItemImage(file);
+                  navigateTo(`/items/new?userId=${user.id}&mode=image`);
+                }}
+                onSelectManual={() => {
+                  if (!user) {
+                    return;
+                  }
+
+                  navigateTo(`/items/new?userId=${user.id}&mode=manual`);
                 }}
               />
               <button

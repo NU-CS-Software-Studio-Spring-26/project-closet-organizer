@@ -5,11 +5,15 @@ import {
   ClothingItem,
   destroyClothingItem,
   fetchClothingItem,
+  fileFromDataUrl,
   formatDisplaySize,
+  generateClothingItemCleanImage,
+  previewCleanImage,
   saveClothingItem,
   titleize,
   toClothingItemFormValues,
 } from "../lib/closet";
+import { AiCleanImageButton } from "./AiCleanImageButton";
 import { ItemHeroPreview } from "./ItemHeroPreview";
 import { ItemMetadataFields } from "./ItemMetadataFields";
 import { ItemPhotoField } from "./ItemPhotoField";
@@ -37,6 +41,7 @@ export function ItemDetailPage({
   const [isLoading, setIsLoading] = useState(!initialItem);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCleaningImage, setIsCleaningImage] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const photoState = useItemPhotoState(item?.image_url);
@@ -141,6 +146,42 @@ export function ItemDetailPage({
     }
   }
 
+  async function handleCleanImage() {
+    if (!item) {
+      return;
+    }
+
+    setIsCleaningImage(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      if (photoState.selectedFile) {
+        const preview = await previewCleanImage(photoState.selectedFile);
+        const cleanedFile = await fileFromDataUrl(
+          preview.data_url,
+          preview.filename,
+          preview.content_type,
+        );
+        photoState.updateSelectedFile(cleanedFile);
+        setSuccessMessage("AI-cleaned preview ready. Save changes to keep it.");
+      } else {
+        const updatedItem = await generateClothingItemCleanImage(item.id);
+        setItem(updatedItem);
+        setFormValues(toClothingItemFormValues(updatedItem));
+        photoState.reset();
+        setSuccessMessage("AI-cleaned image saved to this item.");
+        onItemSaved(updatedItem);
+      }
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to create an AI-cleaned item image.",
+      );
+    } finally {
+      setIsCleaningImage(false);
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -239,17 +280,34 @@ export function ItemDetailPage({
           )}
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <ItemPhotoField
-              description="Upload a photo to display behind the item title throughout the closet."
-              hasExistingPhoto={Boolean(item.image_url)}
-              inputRef={photoState.inputRef}
-              isRemovingExisting={photoState.removeExisting}
-              onClearSelection={photoState.clearSelectedFile}
-              onFileChange={photoState.updateSelectedFile}
-              onKeepExisting={photoState.keepExistingPhoto}
-              onRemoveExisting={photoState.markExistingForRemoval}
-              selectedFileName={photoState.selectedFile?.name}
-            />
+            <div className="space-y-4 sm:col-span-2">
+              <ItemPhotoField
+                description="Upload a photo to display behind the item title throughout the closet."
+                hasExistingPhoto={Boolean(item.image_url)}
+                inputRef={photoState.inputRef}
+                isRemovingExisting={photoState.removeExisting}
+                onClearSelection={photoState.clearSelectedFile}
+                onFileChange={photoState.updateSelectedFile}
+                onKeepExisting={photoState.keepExistingPhoto}
+                onRemoveExisting={photoState.markExistingForRemoval}
+                selectedFileName={photoState.selectedFile?.name}
+              />
+
+              <div className="flex flex-wrap items-center justify-between gap-4 border border-border bg-card px-4 py-3">
+                <p className="text-sm text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
+                  {photoState.selectedFile
+                    ? "Run the AI cleaner on the newly selected image before saving."
+                    : item.image_url
+                      ? "Generate a cleaner catalog-style PNG from the current saved image."
+                      : "Upload a photo first to use the AI cleaner."}
+                </p>
+                <AiCleanImageButton
+                  disabled={photoState.removeExisting || (!photoState.selectedFile && !item.image_url)}
+                  isLoading={isCleaningImage}
+                  onClick={() => void handleCleanImage()}
+                />
+              </div>
+            </div>
             <ItemMetadataFields values={formValues} onChange={setFormValues} />
           </div>
 
