@@ -14,10 +14,10 @@ class ClothingItemPhotoCropper
   def call
     with_source_file do |file_path, filename_root|
       source_image = MiniMagick::Image.open(file_path)
-      crop_width = [(source_image.width * bounding_box.fetch(:width)).round, 1].max
-      crop_height = [(source_image.height * bounding_box.fetch(:height)).round, 1].max
-      crop_x = (source_image.width * bounding_box.fetch(:x)).round.clamp(0, [source_image.width - 1, 0].max)
-      crop_y = (source_image.height * bounding_box.fetch(:y)).round.clamp(0, [source_image.height - 1, 0].max)
+      crop_width = [ (source_image.width * bounding_box.fetch(:width)).round, 1 ].max
+      crop_height = [ (source_image.height * bounding_box.fetch(:height)).round, 1 ].max
+      crop_x = (source_image.width * bounding_box.fetch(:x)).round.clamp(0, [ source_image.width - 1, 0 ].max)
+      crop_y = (source_image.height * bounding_box.fetch(:y)).round.clamp(0, [ source_image.height - 1, 0 ].max)
 
       crop_width = [ crop_width, source_image.width - crop_x ].min
       crop_height = [ crop_height, source_image.height - crop_y ].min

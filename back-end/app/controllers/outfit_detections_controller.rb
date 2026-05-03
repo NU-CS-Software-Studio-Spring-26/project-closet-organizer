@@ -51,5 +51,4 @@ class OutfitDetectionsController < ApplicationController
       content_type: cropped_photo.fetch(:content_type)
     )
   end
-
 end

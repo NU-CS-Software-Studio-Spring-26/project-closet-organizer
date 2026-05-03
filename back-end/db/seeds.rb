@@ -6,53 +6,53 @@ ClothingItem.destroy_all
 User.destroy_all
 
 SEASON_MONTHS = {
-  spring: [3, 4, 5],
-  summer: [6, 7, 8],
-  fall: [9, 10, 11],
-  winter: [12, 1, 2],
+  spring: [ 3, 4, 5 ],
+  summer: [ 6, 7, 8 ],
+  fall: [ 9, 10, 11 ],
+  winter: [ 12, 1, 2 ],
   all_season: (1..12).to_a
 }.freeze
 
 WARDROBE_LIBRARY = {
   smart_casual: [
-    ["Oxford Shirt", "J.Crew", "cotton", "spring", "blue"],
-    ["Merino Crewneck Sweater", "Uniqlo", "merino_wool", "winter", "charcoal"],
-    ["Straight-Leg Jeans", "Madewell", "denim", "all_season", "indigo"],
-    ["Tailored Chinos", "Banana Republic", "twill", "fall", "khaki"],
-    ["Leather Loafers", "Sam Edelman", "leather", "all_season", "black"],
-    ["Single-Breasted Blazer", "Theory", "wool_blend", "fall", "navy"]
+    [ "Oxford Shirt", "J.Crew", "cotton", "spring", "blue" ],
+    [ "Merino Crewneck Sweater", "Uniqlo", "merino_wool", "winter", "charcoal" ],
+    [ "Straight-Leg Jeans", "Madewell", "denim", "all_season", "indigo" ],
+    [ "Tailored Chinos", "Banana Republic", "twill", "fall", "khaki" ],
+    [ "Leather Loafers", "Sam Edelman", "leather", "all_season", "black" ],
+    [ "Single-Breasted Blazer", "Theory", "wool_blend", "fall", "navy" ]
   ],
   athleisure: [
-    ["Training Joggers", "Lululemon", "recycled_polyester", "all_season", "black"],
-    ["Performance Tee", "Nike", "moisture_wicking_jersey", "summer", "heather_gray"],
-    ["Running Hoodie", "Under Armour", "performance_fleece", "winter", "gray"],
-    ["Quarter-Zip Pullover", "Vuori", "polyester", "fall", "navy"],
-    ["Hybrid Shorts", "Ten Thousand", "nylon", "summer", "stone"],
-    ["Trail Shell Jacket", "Patagonia", "ripstop", "spring", "olive"]
+    [ "Training Joggers", "Lululemon", "recycled_polyester", "all_season", "black" ],
+    [ "Performance Tee", "Nike", "moisture_wicking_jersey", "summer", "heather_gray" ],
+    [ "Running Hoodie", "Under Armour", "performance_fleece", "winter", "gray" ],
+    [ "Quarter-Zip Pullover", "Vuori", "polyester", "fall", "navy" ],
+    [ "Hybrid Shorts", "Ten Thousand", "nylon", "summer", "stone" ],
+    [ "Trail Shell Jacket", "Patagonia", "ripstop", "spring", "olive" ]
   ],
   minimal: [
-    ["Rib Tank", "Uniqlo", "cotton", "summer", "black"],
-    ["Relaxed Trousers", "COS", "twill", "all_season", "taupe"],
-    ["Linen Button-Down", "Everlane", "linen", "spring", "white"],
-    ["Slip Skirt", "Aritzia", "satin", "summer", "cream"],
-    ["Wool Coat", "Mango", "wool", "winter", "camel"],
-    ["Ankle Boots", "Steve Madden", "suede", "fall", "brown"]
+    [ "Rib Tank", "Uniqlo", "cotton", "summer", "black" ],
+    [ "Relaxed Trousers", "COS", "twill", "all_season", "taupe" ],
+    [ "Linen Button-Down", "Everlane", "linen", "spring", "white" ],
+    [ "Slip Skirt", "Aritzia", "satin", "summer", "cream" ],
+    [ "Wool Coat", "Mango", "wool", "winter", "camel" ],
+    [ "Ankle Boots", "Steve Madden", "suede", "fall", "brown" ]
   ],
   vintage: [
-    ["Band Tee", "Levis", "cotton", "all_season", "washed_black"],
-    ["High-Rise Mom Jeans", "Levis", "denim", "all_season", "light_blue"],
-    ["Corduroy Jacket", "Free People", "corduroy", "fall", "rust"],
-    ["Pleated Midi Dress", "Reformation", "viscose", "summer", "sage"],
-    ["Western Boots", "Frye", "leather", "fall", "cognac"],
-    ["Wool Beret", "Anthropologie", "wool", "winter", "burgundy"]
+    [ "Band Tee", "Levis", "cotton", "all_season", "washed_black" ],
+    [ "High-Rise Mom Jeans", "Levis", "denim", "all_season", "light_blue" ],
+    [ "Corduroy Jacket", "Free People", "corduroy", "fall", "rust" ],
+    [ "Pleated Midi Dress", "Reformation", "viscose", "summer", "sage" ],
+    [ "Western Boots", "Frye", "leather", "fall", "cognac" ],
+    [ "Wool Beret", "Anthropologie", "wool", "winter", "burgundy" ]
   ],
   polished: [
-    ["Silk Blouse", "Sezane", "silk", "spring", "ivory"],
-    ["Pleated Trousers", "Aritzia", "crepe", "all_season", "black"],
-    ["Cashmere Cardigan", "Naadam", "cashmere", "winter", "oatmeal"],
-    ["Pencil Skirt", "Theory", "wool_blend", "fall", "charcoal"],
-    ["Block Heel Pumps", "Cole Haan", "leather", "all_season", "black"],
-    ["Trench Coat", "Everlane", "cotton_blend", "spring", "sand"]
+    [ "Silk Blouse", "Sezane", "silk", "spring", "ivory" ],
+    [ "Pleated Trousers", "Aritzia", "crepe", "all_season", "black" ],
+    [ "Cashmere Cardigan", "Naadam", "cashmere", "winter", "oatmeal" ],
+    [ "Pencil Skirt", "Theory", "wool_blend", "fall", "charcoal" ],
+    [ "Block Heel Pumps", "Cole Haan", "leather", "all_season", "black" ],
+    [ "Trench Coat", "Everlane", "cotton_blend", "spring", "sand" ]
   ]
 }.freeze
 

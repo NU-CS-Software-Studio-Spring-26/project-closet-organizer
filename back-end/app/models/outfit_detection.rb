@@ -91,7 +91,7 @@ class OutfitDetection < ApplicationRecord
   end
 
   def legacy_bounding_box_must_be_normalized
-    values = [bbox_x, bbox_y, bbox_width, bbox_height]
+    values = [ bbox_x, bbox_y, bbox_width, bbox_height ]
     return if values.all?(&:nil?)
 
     validate_box_values(values, "legacy bounding box")
