@@ -24,7 +24,7 @@ Milestone 0 MVP:
 
 Heroku deployment link:
 
-- https://closet-organizer-33f74c4273cd.herokuapp.com/
+- https://closet-organizer-app-6a29560f355b.herokuapp.com/
 
 ## Communication
 
