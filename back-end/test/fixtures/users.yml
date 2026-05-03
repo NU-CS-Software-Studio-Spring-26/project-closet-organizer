@@ -2,10 +2,16 @@
 
 one:
   username: alex
+  email: alex@example.com
   password_digest: <%= BCrypt::Password.create("password123") %>
   preferred_style: classic
+  provider: google_oauth2
+  uid: google-alex
 
 two:
   username: jordan
+  email: jordan@example.com
   password_digest: <%= BCrypt::Password.create("password123") %>
   preferred_style: casual
+  provider: google_oauth2
+  uid: google-jordan

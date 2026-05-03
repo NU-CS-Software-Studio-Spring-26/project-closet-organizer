@@ -37,7 +37,7 @@ class ApplicationController < ActionController::API
   def current_user
     return @current_user if defined?(@current_user)
 
-    @current_user = User.find_by(id: session[:user_id])
+    @current_user = User.find_by(id: test_user_id || session[:user_id])
   end
 
   def logged_in?
@@ -55,7 +55,7 @@ class ApplicationController < ActionController::API
   end
 
   def user_payload(user, include_items: true)
-    payload = user.serializable_hash(only: %i[id username preferred_style email avatar_url created_at updated_at])
+    payload = user.serializable_hash(only: %i[ id username preferred_style email avatar_url created_at updated_at ])
 
     if include_items
       payload["clothing_items"] = user.clothing_items.order(:name).map do |item|
@@ -68,11 +68,17 @@ class ApplicationController < ActionController::API
 
   def clothing_item_payload(clothing_item, include_user: true)
     payload = clothing_item.serializable_hash(
-      only: %i[id name date user_id created_at updated_at tags]
+      only: %i[ id name date user_id created_at updated_at tags ]
     )
     payload["size"] = clothing_item.size
     payload["image_url"] = clothing_item.photo.attached? ? url_for(clothing_item.photo) : nil
     payload["user"] = user_payload(clothing_item.user, include_items: false) if include_user
     payload
+  end
+
+  def test_user_id
+    return unless Rails.env.test?
+
+    request.headers["X-Test-User-Id"].presence
   end
 end
