@@ -5,6 +5,46 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKEND_DIR="$ROOT_DIR/back-end"
 FRONTEND_DIR="$ROOT_DIR/front-end"
+
+load_env_file() {
+  local env_file="$1"
+  local line=""
+  local key=""
+  local value=""
+  local line_number=0
+
+  if [[ ! -f "$env_file" ]]; then
+    return
+  fi
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    ((line_number += 1))
+    [[ "$line" =~ ^[[:space:]]*$ ]] && continue
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+
+    if [[ ! "$line" =~ ^[[:space:]]*(export[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+      echo "Skipping unsupported env entry in $env_file at line $line_number" >&2
+      continue
+    fi
+
+    key="${BASH_REMATCH[2]}"
+    value="${BASH_REMATCH[3]}"
+    value="${value%$'\r'}"
+
+    if [[ "$value" =~ ^\"(.*)\"$ ]]; then
+      value="${BASH_REMATCH[1]}"
+    elif [[ "$value" =~ ^\'(.*)\'$ ]]; then
+      value="${BASH_REMATCH[1]}"
+    fi
+
+    if [[ -z "${!key:-}" ]]; then
+      export "$key=$value"
+    fi
+  done < "$env_file"
+}
+
+load_env_file "$BACKEND_DIR/.env"
+
 BACKEND_HOST="${BACKEND_HOST:-127.0.0.1}"
 BACKEND_PORT="${BACKEND_PORT:-3000}"
 FRONTEND_HOST="${FRONTEND_HOST:-127.0.0.1}"
@@ -102,6 +142,8 @@ kill_processes_on_port "$FRONTEND_PORT" "frontend"
 echo "Starting backend on http://${BACKEND_HOST}:${BACKEND_PORT}"
 (
   cd "$BACKEND_DIR"
+  echo "Preparing backend database"
+  ./bin/rails db:prepare
   FRONTEND_HOST="$FRONTEND_HOST" FRONTEND_PORT="$FRONTEND_PORT" exec ./bin/dev -b "$BACKEND_HOST" -p "$BACKEND_PORT"
 ) &
 BACKEND_PID=$!

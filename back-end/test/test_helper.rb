@@ -17,6 +17,10 @@ end
 class ActionDispatch::IntegrationTest
   private
 
+  def auth_headers(user)
+    { "X-Test-User-Id" => user.id.to_s }
+  end
+
   def response_json
     JSON.parse(response.body)
   end
