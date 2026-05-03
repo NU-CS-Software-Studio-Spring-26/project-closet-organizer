@@ -1,6 +1,6 @@
 class ClothingItemsController < ApplicationController
   before_action :require_login
-  before_action :set_clothing_item, only: %i[show update destroy]
+  before_action :set_clothing_item, only: %i[ show update destroy ]
 
   def index
     @clothing_items = current_user.clothing_items.includes(:user).order(:name)

@@ -5,7 +5,7 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  match "/auth/:provider/callback", to: "sessions#create", via: %i[get post]
+  match "/auth/:provider/callback", to: "sessions#create", via: %i[ get post ]
   get "/auth/failure", to: "sessions#failure"
 
   scope defaults: { format: :json } do
@@ -13,8 +13,8 @@ Rails.application.routes.draw do
     get "me", to: "sessions#me"
     delete "session", to: "sessions#destroy"
 
-    resources :users, except: %i[new edit]
-    resources :clothing_items, except: %i[new edit]
+    resources :users, except: %i[ new edit ]
+    resources :clothing_items, except: %i[ new edit ]
   end
 
   get "*path", to: "fallback#index", constraints: ->(req) { !req.xhr? && req.format.html? }

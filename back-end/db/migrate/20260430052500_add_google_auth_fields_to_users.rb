@@ -5,7 +5,7 @@ class AddGoogleAuthFieldsToUsers < ActiveRecord::Migration[8.1]
     add_column :users, :email, :string
     add_column :users, :avatar_url, :string
 
-    add_index :users, [:provider, :uid], unique: true
+    add_index :users, [ :provider, :uid ], unique: true
     add_index :users, :email
   end
 end
