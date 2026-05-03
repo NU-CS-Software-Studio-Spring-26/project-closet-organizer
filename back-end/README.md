@@ -162,6 +162,7 @@ See `back-end/.env.example` for expected variables.
 
 - `OPENROUTER_API_KEY` is required for outfit detection.
 - `OPENROUTER_MODEL` defaults to `openai/gpt-4.1-mini`.
+- `OUTFIT_CROP_CYCLE_LIMIT` defaults to `1` and controls how many crop refinement/verification cycles run per detected item.
 - Active Storage can be configured for S3-style storage through the provided AWS variables.
 
 ## Frontend Integration

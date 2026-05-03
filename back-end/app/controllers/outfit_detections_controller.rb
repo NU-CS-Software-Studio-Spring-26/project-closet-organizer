@@ -75,13 +75,7 @@ class OutfitDetectionsController < ApplicationController
   end
 
   def detection_clean_prompt_context(outfit_detection)
-    {
-      name: outfit_detection.suggested_name,
-      category: outfit_detection.category,
-      color: outfit_detection.details["dominant_color"],
-      material: outfit_detection.details["material_guess"],
-      style: outfit_detection.details["style_guess"]
-    }.compact_blank
+    ImageCleanPromptBuilder.for_detection(outfit_detection)
   end
 
   def cleanup_temporary_files(temporary_files)

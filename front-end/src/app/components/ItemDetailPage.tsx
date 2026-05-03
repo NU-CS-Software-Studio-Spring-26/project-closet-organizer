@@ -231,6 +231,7 @@ export function ItemDetailPage({
 
       <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr] items-start">
         <ItemHeroPreview
+          allowExpand
           imageUrl={photoState.imageUrl}
           label="Clothing Item"
           primaryDetail={formatDisplaySize(formValues.size)}

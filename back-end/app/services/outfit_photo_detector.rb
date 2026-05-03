@@ -49,6 +49,7 @@ class OutfitPhotoDetector < OpenrouterVisionService
             "dominant_color": "white",
             "material_guess": "cotton",
             "style_guess": "classic",
+            "appearance_summary": "White cotton button-up shirt with a classic silhouette and visible long sleeves.",
             "notes": "Any short note that helps explain the item."
           }
         ]
@@ -63,6 +64,7 @@ class OutfitPhotoDetector < OpenrouterVisionService
       - coarse_box values must be normalized decimals from 0 to 1 relative to the full image.
       - coarse_box may be slightly loose, but it must contain the full item.
       - If material or style is unclear, use an empty string.
+      - appearance_summary should be one short natural-language description of the item's look, including any useful silhouette, graphic, neckline, sleeve, or fit details you can see.
       - Return only JSON and no markdown.
     PROMPT
   end
@@ -88,6 +90,7 @@ class OutfitPhotoDetector < OpenrouterVisionService
               dominant_color
               material_guess
               style_guess
+              appearance_summary
               notes
             ],
             properties: {
@@ -100,6 +103,7 @@ class OutfitPhotoDetector < OpenrouterVisionService
               dominant_color: { type: "string" },
               material_guess: { type: "string" },
               style_guess: { type: "string" },
+              appearance_summary: { type: "string" },
               notes: { type: "string" }
             }
           }
@@ -125,6 +129,7 @@ class OutfitPhotoDetector < OpenrouterVisionService
           dominant_color: item["dominant_color"].to_s.strip,
           material_guess: item["material_guess"].to_s.strip,
           style_guess: item["style_guess"].to_s.strip,
+          appearance_summary: item["appearance_summary"].to_s.strip,
           notes: item["notes"].to_s.strip
         }.compact_blank
       }

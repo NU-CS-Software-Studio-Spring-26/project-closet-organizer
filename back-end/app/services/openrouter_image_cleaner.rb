@@ -108,9 +108,14 @@ class OpenrouterImageCleaner
     details = []
     details << "Item name: #{prompt_context[:name]}" if prompt_context[:name].present?
     details << "Category: #{prompt_context[:category]}" if prompt_context[:category].present?
-    details << "Color: #{prompt_context[:color]}" if prompt_context[:color].present?
-    details << "Material: #{prompt_context[:material]}" if prompt_context[:material].present?
-    details << "Style: #{prompt_context[:style]}" if prompt_context[:style].present?
+    details << "Dominant color: #{prompt_context[:color]}" if prompt_context[:color].present?
+    details << "Material cue: #{prompt_context[:material]}" if prompt_context[:material].present?
+    details << "Style cue: #{prompt_context[:style]}" if prompt_context[:style].present?
+    details << "Original detection notes: #{prompt_context[:notes]}" if prompt_context[:notes].present?
+
+    hard_constraints = Array(prompt_context[:hard_constraints]).compact_blank
+    soft_hints = Array(prompt_context[:soft_hints]).compact_blank
+    appearance_summary = prompt_context[:appearance_summary].presence
 
     <<~PROMPT
       Create a single realistic catalog-style PNG of the same clothing item shown in the reference image.
@@ -123,8 +128,13 @@ class OpenrouterImageCleaner
       - Remove people, body parts, hangers, background clutter, extra garments, props, and shadows that distract from the item.
       - Keep the style photorealistic and suitable for an ecommerce product card.
       - Do not invent a different garment or change the dominant color/pattern.
+      - Treat the structured fields and description below as identity constraints from an earlier identification pass.
+      - If the image and the text disagree, preserve the same garment identity as faithfully as possible instead of inventing a new item.
 
       #{details.join("\n")}
+      #{appearance_summary.present? ? "\nAppearance summary:\n#{appearance_summary}" : ""}
+      #{hard_constraints.present? ? "\nHard constraints:\n#{hard_constraints.map { |constraint| "- #{constraint}" }.join("\n")}" : ""}
+      #{soft_hints.present? ? "\nSoft hints:\n#{soft_hints.map { |hint| "- #{hint}" }.join("\n")}" : ""}
     PROMPT
   end
 

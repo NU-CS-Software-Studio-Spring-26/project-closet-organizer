@@ -48,9 +48,10 @@ export interface OutfitDetection {
     dominant_color?: string;
     material_guess?: string;
     style_guess?: string;
+    appearance_summary?: string;
     notes?: string;
   };
-  crop_status: "pending" | "refined" | "verified" | "rejected" | "failed";
+  crop_status?: "pending" | "refined" | "verified" | "rejected" | "failed";
   crop_confidence?: number | null;
   crop_quality_score?: number | null;
   crop_notes?: string | null;

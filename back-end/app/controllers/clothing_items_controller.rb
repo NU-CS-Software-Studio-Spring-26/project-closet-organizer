@@ -146,8 +146,8 @@ class ClothingItemsController < ApplicationController
   end
 
   def attach_photo_from_detection(clothing_item, temporary_files)
-    unless source_outfit_detection.crop_ready?
-      clothing_item.errors.add(:base, "Selected detection does not have a verified crop yet")
+    unless source_outfit_detection.usable_candidate_box.present?
+      clothing_item.errors.add(:base, "Selected detection does not have a usable crop yet")
       return
     end
 
@@ -222,13 +222,7 @@ class ClothingItemsController < ApplicationController
   end
 
   def clothing_item_clean_prompt_context(clothing_item)
-    {
-      name: clothing_item.name,
-      category: clothing_item.name,
-      color: clothing_item.tags["color"],
-      material: clothing_item.tags["material"],
-      style: clothing_item.tags["style"]
-    }.compact_blank
+    ImageCleanPromptBuilder.for_clothing_item(clothing_item)
   end
 
   def source_outfit_detection

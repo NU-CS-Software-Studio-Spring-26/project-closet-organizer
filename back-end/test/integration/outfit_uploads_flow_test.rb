@@ -92,7 +92,7 @@ class OutfitUploadsFlowTest < ActionDispatch::IntegrationTest
     assert_equal "openai/gpt-4.1-mini", response_json["vision_model"]
     assert_equal 2, response_json["detections"].length
     assert_equal "shirt", response_json["detections"].first["category"]
-    assert_equal "verified", response_json["detections"].first["crop_status"]
+    assert_not response_json["detections"].first.key?("crop_status")
     assert_equal 0.12, response_json["detections"].first["coarse_box"]["x"]
     assert_equal 0.14, response_json["detections"].first["refined_box"]["x"]
     assert_equal 0.15, response_json["detections"].first["final_box"]["x"]
@@ -157,7 +157,7 @@ class OutfitUploadsFlowTest < ActionDispatch::IntegrationTest
     assert_equal upload.id, response_json["id"]
     assert_equal 1, response_json["detections"].length
     assert_equal "jacket", response_json["detections"].first["category"]
-    assert_equal "verified", response_json["detections"].first["crop_status"]
+    assert_not response_json["detections"].first.key?("crop_status")
     assert_equal 0.26, response_json["detections"].first["final_box"]["width"]
   end
 
@@ -217,22 +217,24 @@ class OutfitUploadsFlowTest < ActionDispatch::IntegrationTest
       }
     ]
 
-    with_crop_pipeline_stubs(
-      detector_response: detector_response,
-      refinement_response: ->(_detection) { refinement_responses.shift },
-      verification_response: ->(_detection) { verification_responses.shift }
-    ) do
-      post outfit_uploads_url, params: {
-        outfit_upload: {
-          user_id: @user.id,
-          source_photo: item_photo_upload
+    with_env("OUTFIT_CROP_CYCLE_LIMIT" => "2") do
+      with_crop_pipeline_stubs(
+        detector_response: detector_response,
+        refinement_response: ->(_detection) { refinement_responses.shift },
+        verification_response: ->(_detection) { verification_responses.shift }
+      ) do
+        post outfit_uploads_url, params: {
+          outfit_upload: {
+            user_id: @user.id,
+            source_photo: item_photo_upload
+          }
         }
-      }
+      end
     end
 
     assert_response :created
     detection = response_json["detections"].first
-    assert_equal "verified", detection["crop_status"]
+    assert_not detection.key?("crop_status")
     assert_equal 0.11, detection["final_box"]["x"]
   end
 
@@ -354,5 +356,21 @@ class OutfitUploadsFlowTest < ActionDispatch::IntegrationTest
     yield
   ensure
     OpenrouterImageCleaner.singleton_class.send(:define_method, :call, original)
+  end
+
+  def with_env(overrides)
+    original_values = overrides.transform_values { |_, _| nil }
+    overrides.each_key { |key| original_values[key] = ENV[key] }
+    overrides.each { |key, value| ENV[key] = value }
+
+    yield
+  ensure
+    original_values.each do |key, value|
+      if value.nil?
+        ENV.delete(key)
+      else
+        ENV[key] = value
+      end
+    end
   end
 end

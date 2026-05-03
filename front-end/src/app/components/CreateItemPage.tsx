@@ -170,7 +170,7 @@ export function CreateItemPage({
   }
 
   function detectionCanBeSaved(detection: OutfitDetection) {
-    return detection.crop_status === "verified" && Boolean(preferredDetectionBox(detection));
+    return Boolean(preferredDetectionBox(detection));
   }
 
   function toggleDetectionSelection(detection: OutfitDetection) {
@@ -421,19 +421,6 @@ export function CreateItemPage({
               onFileChange={handleImageFileChange}
               selectedFileName={photoState.selectedFile?.name}
             />
-
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border border-border bg-background/40 px-4 py-3">
-              <p className="text-sm text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
-                {photoState.selectedFile
-                  ? "Use sparkle to generate a cleaner reference image before detection runs."
-                  : "Upload a source image first to use the AI cleaner."}
-              </p>
-              <AiCleanImageButton
-                disabled={!photoState.selectedFile}
-                isLoading={isCleaningUploadedPhoto}
-                onClick={() => void handleCleanUploadedPhoto()}
-              />
-            </div>
           </div>
 
           <div className="border border-border bg-card p-5">
@@ -472,8 +459,7 @@ export function CreateItemPage({
               </p>
               <h2 className="mb-1">Choose what to save</h2>
               <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
-                Verified crops are ready to save automatically. Rejected or failed crops stay visible
-                so you can review what the model found.
+                Review what the model found and choose any item you want to save to the closet.
               </p>
             </div>
             <div className="text-sm text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
@@ -523,7 +509,7 @@ export function CreateItemPage({
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
               {outfitUpload.detections.map((detection, index) => (
                 <DetectionReviewCard
                   key={detection.id}
@@ -548,7 +534,7 @@ export function CreateItemPage({
 
         <div className="border-t border-border pt-6 flex items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
-            Selected items will use the backend-verified crop from the uploaded image.
+            Selected items will use the best available crop from the uploaded image.
           </p>
           <button
             type="button"
@@ -694,11 +680,7 @@ function DetectionReviewCard({
       : `${Math.round(detection.confidence * 100)}% detection confidence`;
   const suggestedName = detection.suggested_name?.trim() || titleize(detection.category);
   const previewBox = preferredDetectionBox(detection);
-  const canSave = detection.crop_status === "verified" && Boolean(previewBox);
-  const cropQualityLabel =
-    detection.crop_quality_score == null
-      ? "Quality not available"
-      : `${Math.round(detection.crop_quality_score * 100)}% crop quality`;
+  const canSave = Boolean(previewBox);
 
   return (
     <motion.div
@@ -721,11 +703,9 @@ function DetectionReviewCard({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 text-sm" style={{ fontFamily: "Outfit, sans-serif" }}>
-        <span className="text-muted-foreground">{confidenceLabel}</span>
-        <DetectionStatusBadge status={detection.crop_status} />
-        <span className="text-muted-foreground">{cropQualityLabel}</span>
-      </div>
+      <p className="text-sm text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
+        {confidenceLabel}
+      </p>
 
       <div className="flex items-center justify-between gap-4">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
@@ -797,7 +777,7 @@ function DetectionReviewCard({
           }`}
         >
           <Check className="w-4 h-4" />
-          {isSelected ? "Will save to closet" : canSave ? "Add to closet" : cropStatusActionLabel(detection.crop_status)}
+          {isSelected ? "Will save to closet" : canSave ? "Add to closet" : "Preview unavailable"}
         </button>
       </div>
     </motion.div>
@@ -857,54 +837,6 @@ function DetectionCropPreview({
       <canvas ref={canvasRef} className="block w-full h-auto" />
     </div>
   );
-}
-
-function DetectionStatusBadge({
-  status,
-}: {
-  status: OutfitDetection["crop_status"];
-}) {
-  const label = cropStatusLabel(status);
-  const colorClasses =
-    status === "verified"
-      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
-      : status === "rejected" || status === "failed"
-        ? "border-amber-500/30 bg-amber-500/10 text-amber-700"
-        : "border-border bg-background text-muted-foreground";
-
-  return (
-    <span className={`inline-flex items-center px-2.5 py-1 text-xs uppercase tracking-[0.18em] border ${colorClasses}`}>
-      {label}
-    </span>
-  );
-}
-
-function cropStatusLabel(status: OutfitDetection["crop_status"]) {
-  switch (status) {
-    case "verified":
-      return "Verified crop";
-    case "refined":
-      return "Needs verification";
-    case "rejected":
-      return "Rejected crop";
-    case "failed":
-      return "Crop failed";
-    default:
-      return "Pending crop";
-  }
-}
-
-function cropStatusActionLabel(status: OutfitDetection["crop_status"]) {
-  switch (status) {
-    case "rejected":
-      return "Rejected automatically";
-    case "failed":
-      return "Crop unavailable";
-    case "refined":
-      return "Awaiting verification";
-    default:
-      return "Not ready yet";
-  }
 }
 
 function DetectionDetail({ label, value }: { label: string; value?: string | null }) {

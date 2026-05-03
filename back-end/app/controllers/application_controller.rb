@@ -97,11 +97,6 @@ class ApplicationController < ActionController::API
         suggested_name
         details
         position
-        crop_status
-        crop_confidence
-        crop_quality_score
-        crop_notes
-        crop_attempts
         clean_image_status
         clean_image_error_message
         clean_image_provider

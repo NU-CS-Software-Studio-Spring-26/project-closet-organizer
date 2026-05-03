@@ -45,13 +45,11 @@ class OutfitDetection < ApplicationRecord
   end
 
   def usable_crop_box
-    return nil unless crop_ready?
-
     final_box || refined_box || coarse_box
   end
 
   def crop_ready?
-    crop_status_verified? && usable_candidate_box.present?
+    usable_candidate_box.present?
   end
 
   def usable_candidate_box

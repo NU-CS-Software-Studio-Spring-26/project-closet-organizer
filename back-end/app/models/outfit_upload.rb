@@ -60,28 +60,18 @@ class OutfitUpload < ApplicationRecord
   private
 
   def process_detection_crop!(detection)
-    attempt_refinement_and_verification!(detection, starting_box: detection.coarse_box)
-    return if detection.crop_status_verified?
-
-    attempt_refinement_and_verification!(
-      detection,
-      starting_box: detection.final_box || detection.refined_box || detection.coarse_box,
-      feedback: crop_retry_feedback(detection),
-      reroute: true
-    )
-    return if detection.crop_status_verified?
-
-    attempt_refinement_and_verification!(
-      detection,
-      feedback: crop_retry_feedback(detection, full_relocalization: true),
-      reroute: true
-    )
+    crop_cycle_limit.times do |cycle_index|
+      attempt_refinement_and_verification!(detection, **crop_cycle_options(detection, cycle_index))
+      return finalize_detection_crop!(detection) if detection.crop_status_verified?
+    end
   rescue StandardError => error
     detection.update!(
       crop_status: :failed,
       crop_attempts: detection.crop_attempts + 1,
       crop_notes: [ detection.crop_notes, error.message ].compact_blank.join(" | ")
     )
+  ensure
+    finalize_detection_crop!(detection)
   end
 
   def attempt_refinement_and_verification!(detection, starting_box: nil, feedback: nil, reroute: false)
@@ -133,6 +123,40 @@ class OutfitUpload < ApplicationRecord
 
   def combine_crop_notes(*parts)
     parts.compact_blank.join(" | ").presence
+  end
+
+  def crop_cycle_options(detection, cycle_index)
+    return { starting_box: detection.coarse_box } if cycle_index.zero?
+
+    full_relocalization = cycle_index > 1
+
+    {
+      starting_box: (full_relocalization ? nil : detection.final_box || detection.refined_box || detection.coarse_box),
+      feedback: crop_retry_feedback(detection, full_relocalization: full_relocalization),
+      reroute: true
+    }
+  end
+
+  def crop_cycle_limit
+    value = Integer(ENV.fetch("OUTFIT_CROP_CYCLE_LIMIT", "1"))
+    [value, 1].max
+  rescue ArgumentError, TypeError
+    1
+  end
+
+  def finalize_detection_crop!(detection)
+    best_box = detection.final_box || detection.refined_box || detection.coarse_box
+
+    detection.update!(
+      final_bbox_x: best_box&.dig(:x),
+      final_bbox_y: best_box&.dig(:y),
+      final_bbox_width: best_box&.dig(:width),
+      final_bbox_height: best_box&.dig(:height),
+      crop_status: best_box.present? ? :verified : :failed,
+      crop_confidence: nil,
+      crop_quality_score: nil,
+      crop_notes: nil
+    )
   end
 
   def source_photo_must_be_present
