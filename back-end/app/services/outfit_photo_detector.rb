@@ -142,28 +142,6 @@ class OutfitPhotoDetector < OpenrouterVisionService
     nil
   end
 
-  def box_schema
-    {
-      type: "object",
-      additionalProperties: false,
-      required: %w[x y width height],
-      properties: {
-        x: unit_interval_schema,
-        y: unit_interval_schema,
-        width: unit_interval_schema,
-        height: unit_interval_schema
-      }
-    }
-  end
-
-  def unit_interval_schema
-    {
-      type: "number",
-      minimum: 0,
-      maximum: 1
-    }
-  end
-
   def configured_model
     ENV.fetch("OPENROUTER_DETECTION_MODEL", ENV.fetch("OPENROUTER_MODEL", DEFAULT_MODEL))
   end

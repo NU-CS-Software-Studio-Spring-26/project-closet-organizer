@@ -113,6 +113,28 @@ class OpenrouterVisionService
     JSON.parse(cleaned[json_start..json_end])
   end
 
+  def unit_interval_schema
+    {
+      type: "number",
+      minimum: 0,
+      maximum: 1
+    }
+  end
+
+  def box_schema
+    {
+      type: "object",
+      additionalProperties: false,
+      required: %w[x y width height],
+      properties: {
+        x: unit_interval_schema,
+        y: unit_interval_schema,
+        width: unit_interval_schema,
+        height: unit_interval_schema
+      }
+    }
+  end
+
   def normalize_unit_interval(value)
     number = Float(value)
     return nil unless number.finite?

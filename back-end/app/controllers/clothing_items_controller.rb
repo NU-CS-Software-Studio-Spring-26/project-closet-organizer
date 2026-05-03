@@ -1,7 +1,6 @@
 class ClothingItemsController < ApplicationController
-  before_action :set_clothing_item, only: %i[show update destroy generate_clean_image]
   before_action :require_login
-  before_action :set_clothing_item, only: %i[ show update destroy generate_clean_image ]
+  before_action :set_clothing_item, only: %i[show update destroy generate_clean_image]
 
   def index
     @clothing_items = current_user.clothing_items.includes(:user).order(:name)
@@ -48,48 +47,20 @@ class ClothingItemsController < ApplicationController
   end
 
   def generate_clean_image
-    temporary_files = []
-
     unless @clothing_item.source_photo_for_cleaning.attached?
       render json: { error: "This item does not have a photo to clean." }, status: :unprocessable_content
       return
     end
 
-    @clothing_item.update!(
-      clean_image_status: :processing,
-      clean_image_error_message: nil
-    )
-
-    generated = OpenrouterImageCleaner.call(
-      @clothing_item.source_photo_for_cleaning,
-      prompt_context: clothing_item_clean_prompt_context(@clothing_item)
-    )
-    generated_tempfile = generated.fetch(:tempfile)
-    generated_tempfile.rewind
-    temporary_files << generated_tempfile
-
-    @clothing_item.cleaned_photo.attach(
-      io: generated_tempfile,
-      filename: generated.fetch(:filename),
-      content_type: generated.fetch(:content_type)
-    )
-    @clothing_item.update!(
-      clean_image_status: :succeeded,
-      clean_image_error_message: nil,
-      clean_image_provider: generated.fetch(:provider),
-      clean_image_model: generated.fetch(:model),
-      clean_image_generated_at: Time.current
+    CleanImageAttachmentGenerator.call(
+      record: @clothing_item,
+      source_photo: @clothing_item.source_photo_for_cleaning,
+      prompt_context: ImageCleanPromptBuilder.for_clothing_item(@clothing_item)
     )
 
     render json: clothing_item_payload(@clothing_item.reload)
   rescue StandardError => error
-    @clothing_item.update(
-      clean_image_status: :failed,
-      clean_image_error_message: error.message
-    )
     render json: { error: error.message }, status: :unprocessable_content
-  ensure
-    cleanup_temporary_files(temporary_files)
   end
 
   private
@@ -221,10 +192,6 @@ class ClothingItemsController < ApplicationController
     clothing_item.photo.purge if clothing_item.photo.attached?
     reset_clean_image_state(clothing_item)
     clothing_item.save! if clothing_item.persisted?
-  end
-
-  def clothing_item_clean_prompt_context(clothing_item)
-    ImageCleanPromptBuilder.for_clothing_item(clothing_item)
   end
 
   def source_outfit_detection
