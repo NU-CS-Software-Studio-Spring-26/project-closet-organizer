@@ -14,6 +14,9 @@ User.destroy_all
 seed_users = [
   {
     username: "alexis_ward",
+    email: "alexis.ward@example.com",
+    provider: "google_oauth2",
+    uid: "seed-alexis-ward",
     password: "password",
     preferred_style: "smart_casual",
     items: [
@@ -29,6 +32,9 @@ seed_users = [
   },
   {
     username: "jordan_lee",
+    email: "jordan.lee@example.com",
+    provider: "google_oauth2",
+    uid: "seed-jordan-lee",
     password: "password",
     preferred_style: "athleisure",
     items: [
@@ -44,6 +50,9 @@ seed_users = [
   },
   {
     username: "maya_patel",
+    email: "maya.patel@example.com",
+    provider: "google_oauth2",
+    uid: "seed-maya-patel",
     password: "password",
     preferred_style: "minimal",
     items: [
@@ -64,6 +73,9 @@ created_items_count = 0
 seed_users.each do |user_data|
   user = User.create!(
     username: user_data[:username],
+    email: user_data[:email],
+    provider: user_data[:provider],
+    uid: user_data[:uid],
     password: user_data[:password],
     preferred_style: user_data[:preferred_style]
   )
