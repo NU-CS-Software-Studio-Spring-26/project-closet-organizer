@@ -20,10 +20,17 @@ class ApplicationController < ActionController::API
 
   def allowed_origins
     frontend_port = ENV.fetch("FRONTEND_PORT", "5173")
+    configured_origins = ENV.fetch("ALLOWED_ORIGINS", "")
+      .split(",")
+      .map(&:strip)
+      .reject(&:blank?)
+
     @allowed_origins ||= [
       "http://localhost:#{frontend_port}",
-      "http://127.0.0.1:#{frontend_port}"
-    ]
+      "http://127.0.0.1:#{frontend_port}",
+      request.base_url,
+      *configured_origins
+    ].compact.uniq
   end
 
   def render_not_found(exception)

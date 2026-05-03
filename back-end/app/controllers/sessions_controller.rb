@@ -33,9 +33,18 @@ class SessionsController < ApplicationController
   private
 
   def frontend_base_url
-    host = ENV.fetch("FRONTEND_HOST", "127.0.0.1")
-    port = ENV.fetch("FRONTEND_PORT", "5173")
-    "http://#{host}:#{port}"
+    configured_base_url = ENV["FRONTEND_BASE_URL"]&.strip
+    return configured_base_url if configured_base_url.present?
+
+    host = ENV["FRONTEND_HOST"]&.strip
+    return request.base_url if host.blank?
+
+    port = ENV["FRONTEND_PORT"]&.strip
+    scheme = ENV.fetch("FRONTEND_SCHEME", "http")
+
+    return "#{scheme}://#{host}" if port.blank?
+
+    "#{scheme}://#{host}:#{port}"
   end
 
   def frontend_closet_redirect

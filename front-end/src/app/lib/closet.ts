@@ -1,5 +1,29 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
-const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL ?? "http://127.0.0.1:3000";
+const LOCAL_BACKEND_BASE_URL = "http://127.0.0.1:3000";
+
+function isLocalDevelopmentHost(hostname: string) {
+  return hostname === "localhost" || hostname === "127.0.0.1";
+}
+
+function defaultApiBaseUrl() {
+  if (typeof window === "undefined") {
+    return "/api";
+  }
+
+  return isLocalDevelopmentHost(window.location.hostname) && window.location.port !== "3000" ? "/api" : "";
+}
+
+function defaultBackendBaseUrl() {
+  if (typeof window === "undefined") {
+    return LOCAL_BACKEND_BASE_URL;
+  }
+
+  return isLocalDevelopmentHost(window.location.hostname) && window.location.port !== "3000"
+    ? LOCAL_BACKEND_BASE_URL
+    : window.location.origin;
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? defaultApiBaseUrl();
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL ?? defaultBackendBaseUrl();
 
 export interface ClothingItemTags {
   material?: string;
