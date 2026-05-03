@@ -300,19 +300,6 @@ export async function fetchClothingItem(id: number, signal?: AbortSignal) {
   return (await response.json()) as ClothingItem;
 }
 
-export async function fetchOutfitUpload(id: number, signal?: AbortSignal) {
-  const response = await fetch(`${API_BASE_URL}/outfit_uploads/${id}`, {
-    credentials: "include",
-    signal,
-  });
-
-  if (!response.ok) {
-    throw await buildApiError(response);
-  }
-
-  return (await response.json()) as OutfitUpload;
-}
-
 export async function saveClothingItem(
   id: number,
   userId: number,
@@ -446,7 +433,12 @@ export async function previewCleanImage(photo: File) {
   return (await response.json()) as TemporaryCleanImageResult;
 }
 
-export async function fileFromDataUrl(dataUrl: string, filename: string, contentType?: string) {
+export async function createCleanPreviewFile(photo: File) {
+  const preview = await previewCleanImage(photo);
+  return fileFromDataUrl(preview.data_url, preview.filename, preview.content_type);
+}
+
+async function fileFromDataUrl(dataUrl: string, filename: string, contentType?: string) {
   const response = await fetch(dataUrl);
   const blob = await response.blob();
   return new File([blob], filename, { type: contentType || blob.type || "image/png" });

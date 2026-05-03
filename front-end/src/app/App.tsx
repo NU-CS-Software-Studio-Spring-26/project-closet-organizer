@@ -7,7 +7,6 @@ import { CreateItemPage } from "./components/CreateItemPage";
 import { ItemDetailPage } from "./components/ItemDetailPage";
 import { UserDetailPage } from "./components/UserDetailPage";
 import { UsersDirectoryPage } from "./components/UsersDirectoryPage";
-import { stagePendingCreateItemImage } from "./lib/pendingCreateItemImage";
 import {
   beginGoogleSignIn,
   ClothingItem,
@@ -75,15 +74,6 @@ function getRouteFromLocation(
       kind: "new-item",
       userId: userId ? Number(userId) : null,
       mode: parseCreateItemMode(query.get("mode")),
-    };
-  }
-
-  if (normalizedPath === "/outfits/import") {
-    const userId = query.get("userId");
-    return {
-      kind: "new-item",
-      userId: userId ? Number(userId) : null,
-      mode: "image",
     };
   }
 
@@ -389,12 +379,11 @@ export default function App() {
             >
               <AddItemMenu
                 disabled={!user}
-                onSelectImage={(file) => {
+                onSelectImage={() => {
                   if (!user) {
                     return;
                   }
 
-                  stagePendingCreateItemImage(file);
                   navigateTo(`/items/new?userId=${user.id}&mode=image`);
                 }}
                 onSelectManual={() => {

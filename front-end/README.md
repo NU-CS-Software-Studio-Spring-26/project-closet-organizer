@@ -57,8 +57,8 @@ Routes are derived in `src/app/App.tsx` with `window.location` and `history.push
 - `/users` all users directory
 - `/users/:id` user detail page
 - `/items/:id` clothing item detail editor
-- `/items/new?userId=:id` item creation page
-- `/outfits/import?userId=:id` outfit photo import page
+- `/items/new?userId=:id&mode=manual` manual item creation page
+- `/items/new?userId=:id&mode=image` image upload, detection review, and item creation page
 
 ## Important Source Files
 
@@ -75,9 +75,7 @@ Routes are derived in `src/app/App.tsx` with `window.location` and `history.push
 - `src/app/components/ItemDetailPage.tsx`
   Edit/delete flow for a clothing item
 - `src/app/components/CreateItemPage.tsx`
-  New clothing item flow
-- `src/app/components/OutfitImportPage.tsx`
-  Outfit photo upload and detection-results screen
+  Manual item creation plus image upload/detection review flow
 - `src/app/lib/useItemPhotoState.ts`
   Shared image selection and preview state for item and outfit flows
 
@@ -85,7 +83,7 @@ Routes are derived in `src/app/App.tsx` with `window.location` and `history.push
 
 - The `/closet` screen loads the first user returned by `GET /users`.
 - Item create and edit flows send multipart form data so photos can be attached or removed.
-- Outfit import submits one photo to `POST /outfit_uploads` and renders the returned structured detections.
+- Image-based item creation submits one photo to `POST /outfit_uploads` and renders the returned structured detections.
 - The repo still contains Figma-era helper files and a large reusable UI component set under `src/app/components/ui/`.
 - `src/app/components/OutfitBuilder.tsx` still exists in the repo, but it is not one of the main routed screens.
 

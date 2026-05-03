@@ -2,13 +2,12 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import {
+  createCleanPreviewFile,
   ClothingItem,
   destroyClothingItem,
   fetchClothingItem,
-  fileFromDataUrl,
   formatDisplaySize,
   generateClothingItemCleanImage,
-  previewCleanImage,
   saveClothingItem,
   titleize,
   toClothingItemFormValues,
@@ -157,12 +156,7 @@ export function ItemDetailPage({
 
     try {
       if (photoState.selectedFile) {
-        const preview = await previewCleanImage(photoState.selectedFile);
-        const cleanedFile = await fileFromDataUrl(
-          preview.data_url,
-          preview.filename,
-          preview.content_type,
-        );
+        const cleanedFile = await createCleanPreviewFile(photoState.selectedFile);
         photoState.updateSelectedFile(cleanedFile);
         setSuccessMessage("AI-cleaned preview ready. Save changes to keep it.");
       } else {

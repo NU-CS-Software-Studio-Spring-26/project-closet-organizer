@@ -5,10 +5,10 @@ import {
   ClothingItem,
   ClothingItemFormValues,
   createClothingItem,
+  createCleanPreviewFile,
   createOutfitUpload,
   CreateItemMode,
   emptyClothingItemFormValues,
-  fileFromDataUrl,
   fetchUser,
   formatDisplaySize,
   formatPossessive,
@@ -17,13 +17,11 @@ import {
   OutfitDetectionBoundingBox,
   OutfitUpload,
   preferredDetectionBox,
-  previewCleanImage,
   titleize,
   toClothingItemFormValuesFromDetection,
   User,
 } from "../lib/closet";
 import { AiCleanImageButton } from "./AiCleanImageButton";
-import { consumePendingCreateItemImage } from "../lib/pendingCreateItemImage";
 import { ItemMetadataFields } from "./ItemMetadataFields";
 import { ItemPhotoField } from "./ItemPhotoField";
 import { UploadWorkspace } from "./UploadWorkspace";
@@ -60,7 +58,6 @@ export function CreateItemPage({
     {},
   );
   const photoState = useItemPhotoState();
-  const hasConsumedPendingImage = useRef(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -106,19 +103,6 @@ export function CreateItemPage({
   const selectedDetections =
     outfitUpload?.detections.filter((detection) => selectedDetectionIds.includes(detection.id)) ?? [];
   const selectedCount = selectedDetections.length;
-
-  useEffect(() => {
-    if (!isImageMode || hasConsumedPendingImage.current) {
-      return;
-    }
-
-    hasConsumedPendingImage.current = true;
-    const pendingImage = consumePendingCreateItemImage();
-
-    if (pendingImage) {
-      photoState.updateSelectedFile(pendingImage);
-    }
-  }, [isImageMode, photoState]);
 
   async function detectItems(file: File) {
     if (!userId) {
@@ -225,12 +209,7 @@ export function CreateItemPage({
     setErrorMessage("");
 
     try {
-      const preview = await previewCleanImage(photoState.selectedFile);
-      const cleanedFile = await fileFromDataUrl(
-        preview.data_url,
-        preview.filename,
-        preview.content_type,
-      );
+      const cleanedFile = await createCleanPreviewFile(photoState.selectedFile);
       photoState.updateSelectedFile(cleanedFile);
     } catch (error) {
       setErrorMessage(
