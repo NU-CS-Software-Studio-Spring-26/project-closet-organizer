@@ -1,4 +1,29 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
+const LOCAL_BACKEND_BASE_URL = "http://127.0.0.1:3000";
+
+function isLocalDevelopmentHost(hostname: string) {
+  return hostname === "localhost" || hostname === "127.0.0.1";
+}
+
+function defaultApiBaseUrl() {
+  if (typeof window === "undefined") {
+    return "/api";
+  }
+
+  return isLocalDevelopmentHost(window.location.hostname) && window.location.port !== "3000" ? "/api" : "";
+}
+
+function defaultBackendBaseUrl() {
+  if (typeof window === "undefined") {
+    return LOCAL_BACKEND_BASE_URL;
+  }
+
+  return isLocalDevelopmentHost(window.location.hostname) && window.location.port !== "3000"
+    ? LOCAL_BACKEND_BASE_URL
+    : window.location.origin;
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? defaultApiBaseUrl();
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL ?? defaultBackendBaseUrl();
 
 export interface ClothingItemTags {
   material?: string;
@@ -210,12 +235,43 @@ export function preferredDetectionBox(detection: OutfitDetection) {
 }
 
 export async function fetchClosetOwner(signal?: AbortSignal) {
-  const users = await fetchUsers(signal);
-  return users[0] ?? null;
+  return fetchCurrentUser(signal);
+}
+
+export async function fetchCurrentUser(signal?: AbortSignal) {
+  const response = await fetch(`${API_BASE_URL}/me`, {
+    credentials: "include",
+    signal,
+  });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+
+  return (await response.json()) as User;
+}
+
+export function beginGoogleSignIn() {
+  window.location.assign(`${BACKEND_BASE_URL}/auth/google_oauth2`);
+}
+
+export async function logoutSession() {
+  const response = await fetch(`${API_BASE_URL}/session`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
 }
 
 export async function fetchUsers(signal?: AbortSignal) {
-  const response = await fetch(`${API_BASE_URL}/users`, { signal });
+  const response = await fetch(`${API_BASE_URL}/users`, { credentials: "include", signal });
 
   if (!response.ok) {
     throw new Error(`Request failed with status ${response.status}`);
@@ -225,7 +281,7 @@ export async function fetchUsers(signal?: AbortSignal) {
 }
 
 export async function fetchUser(id: number, signal?: AbortSignal) {
-  const response = await fetch(`${API_BASE_URL}/users/${id}`, { signal });
+  const response = await fetch(`${API_BASE_URL}/users/${id}`, { credentials: "include", signal });
 
   if (!response.ok) {
     throw new Error(`Request failed with status ${response.status}`);
@@ -235,7 +291,7 @@ export async function fetchUser(id: number, signal?: AbortSignal) {
 }
 
 export async function fetchClothingItem(id: number, signal?: AbortSignal) {
-  const response = await fetch(`${API_BASE_URL}/clothing_items/${id}`, { signal });
+  const response = await fetch(`${API_BASE_URL}/clothing_items/${id}`, { credentials: "include", signal });
 
   if (!response.ok) {
     throw new Error(`Request failed with status ${response.status}`);
@@ -245,7 +301,10 @@ export async function fetchClothingItem(id: number, signal?: AbortSignal) {
 }
 
 export async function fetchOutfitUpload(id: number, signal?: AbortSignal) {
-  const response = await fetch(`${API_BASE_URL}/outfit_uploads/${id}`, { signal });
+  const response = await fetch(`${API_BASE_URL}/outfit_uploads/${id}`, {
+    credentials: "include",
+    signal,
+  });
 
   if (!response.ok) {
     throw await buildApiError(response);
@@ -262,6 +321,7 @@ export async function saveClothingItem(
 ) {
   const response = await fetch(`${API_BASE_URL}/clothing_items/${id}`, {
     method: "PATCH",
+    credentials: "include",
     headers: {
       Accept: "application/json",
     },
@@ -282,6 +342,7 @@ export async function createClothingItem(
 ) {
   const response = await fetch(`${API_BASE_URL}/clothing_items`, {
     method: "POST",
+    credentials: "include",
     headers: {
       Accept: "application/json",
     },
@@ -305,6 +366,7 @@ export async function createOutfitUpload(
 
   const response = await fetch(`${API_BASE_URL}/outfit_uploads`, {
     method: "POST",
+    credentials: "include",
     headers: {
       Accept: "application/json",
     },
@@ -321,6 +383,7 @@ export async function createOutfitUpload(
 export async function destroyClothingItem(id: number) {
   const response = await fetch(`${API_BASE_URL}/clothing_items/${id}`, {
     method: "DELETE",
+    credentials: "include",
     headers: {
       Accept: "application/json",
     },
@@ -334,6 +397,7 @@ export async function destroyClothingItem(id: number) {
 export async function generateClothingItemCleanImage(id: number) {
   const response = await fetch(`${API_BASE_URL}/clothing_items/${id}/generate_clean_image`, {
     method: "POST",
+    credentials: "include",
     headers: {
       Accept: "application/json",
     },
@@ -349,6 +413,7 @@ export async function generateClothingItemCleanImage(id: number) {
 export async function generateOutfitDetectionCleanImage(id: number) {
   const response = await fetch(`${API_BASE_URL}/outfit_detections/${id}/generate_clean_image`, {
     method: "POST",
+    credentials: "include",
     headers: {
       Accept: "application/json",
     },
@@ -367,6 +432,7 @@ export async function previewCleanImage(photo: File) {
 
   const response = await fetch(`${API_BASE_URL}/image_variants/preview`, {
     method: "POST",
+    credentials: "include",
     headers: {
       Accept: "application/json",
     },

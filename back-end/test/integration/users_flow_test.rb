@@ -6,21 +6,21 @@ class UsersFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "users index loads" do
-    get users_url, as: :json
+    get users_url, headers: auth_headers(@user), as: :json
 
     assert_response :success
     assert_equal @user.username, response_json.first["username"]
   end
 
   test "user show loads" do
-    get user_url(@user), as: :json
+    get user_url(@user), headers: auth_headers(@user), as: :json
 
     assert_response :success
     assert_equal @user.username, response_json["username"]
   end
 
-  test "can create a user" do
-    assert_difference("User.count", 1) do
+  test "user creation is handled through google sign-in" do
+    assert_no_difference("User.count") do
       post users_url, params: {
         user: {
           username: "sam",
@@ -28,11 +28,11 @@ class UsersFlowTest < ActionDispatch::IntegrationTest
           password: "password123",
           password_confirmation: "password123"
         }
-      }, as: :json
+      }, headers: auth_headers(@user), as: :json
     end
 
-    assert_response :created
-    assert_equal "sam", response_json["username"]
+    assert_response :unauthorized
+    assert_equal "User creation is handled through Google sign-in.", response_json["error"]
   end
 
   test "can update a user without changing password" do
@@ -43,7 +43,7 @@ class UsersFlowTest < ActionDispatch::IntegrationTest
         password: "",
         password_confirmation: ""
       }
-    }, as: :json
+    }, headers: auth_headers(@user), as: :json
 
     assert_response :success
     assert_equal "alex-updated", @user.reload.username
@@ -53,7 +53,7 @@ class UsersFlowTest < ActionDispatch::IntegrationTest
 
   test "can delete a user" do
     assert_difference("User.count", -1) do
-      delete user_url(@user), as: :json
+      delete user_url(@user), headers: auth_headers(@user), as: :json
     end
 
     assert_response :no_content

@@ -7,14 +7,14 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "clothing items index loads" do
-    get clothing_items_url, as: :json
+    get clothing_items_url, headers: auth_headers(@user), as: :json
 
     assert_response :success
     assert_includes response_json.map { |item| item["name"] }, @clothing_item.name
   end
 
   test "clothing item show loads" do
-    get clothing_item_url(@clothing_item), as: :json
+    get clothing_item_url(@clothing_item), headers: auth_headers(@user), as: :json
 
     assert_response :success
     assert_equal @clothing_item.name, response_json["name"]
@@ -34,7 +34,7 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
           brand: "Studio North",
           color: "camel"
         }
-      }, as: :json
+      }, headers: auth_headers(@user), as: :json
     end
 
     assert_response :created
@@ -52,7 +52,7 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
           color: "white",
           photo: item_photo_upload
         }
-      }
+      }, headers: auth_headers(@user)
     end
 
     assert_response :created
@@ -74,7 +74,7 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
           crop_width: "0.5",
           crop_height: "0.5"
         }
-      }
+      }, headers: auth_headers(@user)
     end
 
     assert_response :created
@@ -120,7 +120,7 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
           color: "white",
           source_outfit_detection_id: detection.id
         }
-      }
+      }, headers: auth_headers(@user)
     end
 
     assert_response :created
@@ -167,7 +167,7 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
           color: "white",
           source_outfit_detection_id: detection.id
         }
-      }
+      }, headers: auth_headers(@user)
     end
 
     assert_response :created
@@ -190,7 +190,7 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
         brand: "Maison",
         color: "ivory"
       }
-    }, as: :json
+    }, headers: auth_headers(@user), as: :json
 
     assert_response :success
 
@@ -217,7 +217,7 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
         color: @clothing_item.tags["color"],
         remove_photo: "true"
       }
-    }
+    }, headers: auth_headers(@user)
 
     assert_response :success
 
@@ -230,7 +230,7 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
     @clothing_item.photo.attach(item_photo_upload_png)
 
     with_image_cleaner_stub do
-      post generate_clean_image_clothing_item_url(@clothing_item), as: :json
+      post generate_clean_image_clothing_item_url(@clothing_item), headers: auth_headers(@user), as: :json
     end
 
     assert_response :success
@@ -243,7 +243,7 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
 
   test "can delete a clothing item" do
     assert_difference("ClothingItem.count", -1) do
-      delete clothing_item_url(@clothing_item), as: :json
+      delete clothing_item_url(@clothing_item), headers: auth_headers(@user), as: :json
     end
 
     assert_response :no_content

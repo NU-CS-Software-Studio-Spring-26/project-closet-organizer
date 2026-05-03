@@ -1,4 +1,5 @@
 class OutfitUploadsController < ApplicationController
+  before_action :require_login
   before_action :set_outfit_upload, only: :show
 
   def create
@@ -24,10 +25,10 @@ class OutfitUploadsController < ApplicationController
   private
 
   def set_outfit_upload
-    @outfit_upload = OutfitUpload.find(params[:id])
+    @outfit_upload = current_user.outfit_uploads.find(params[:id])
   end
 
   def outfit_upload_params
-    params.require(:outfit_upload).permit(:user_id, :source_photo)
+    params.require(:outfit_upload).permit(:source_photo).merge(user: current_user)
   end
 end

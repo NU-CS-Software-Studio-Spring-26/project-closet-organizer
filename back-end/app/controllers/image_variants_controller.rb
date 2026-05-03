@@ -1,6 +1,8 @@
 require "base64"
 
 class ImageVariantsController < ApplicationController
+  before_action :require_login
+
   def preview
     source_photo = params.dig(:image_variant, :source_photo)
     if source_photo.blank?

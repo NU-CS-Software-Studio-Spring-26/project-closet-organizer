@@ -1,4 +1,5 @@
 class OutfitDetectionsController < ApplicationController
+  before_action :require_login
   before_action :set_outfit_detection
 
   def generate_clean_image
@@ -50,7 +51,9 @@ class OutfitDetectionsController < ApplicationController
   private
 
   def set_outfit_detection
-    @outfit_detection = OutfitDetection.find(params[:id])
+    @outfit_detection = OutfitDetection
+      .joins(:outfit_upload)
+      .find_by!(id: params[:id], outfit_uploads: { user_id: current_user.id })
   end
 
   def source_photo_for_cleaning(outfit_detection, temporary_files)

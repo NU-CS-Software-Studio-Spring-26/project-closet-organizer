@@ -82,7 +82,7 @@ class OutfitUploadsFlowTest < ActionDispatch::IntegrationTest
               user_id: @user.id,
               source_photo: item_photo_upload
             }
-          }
+          }, headers: auth_headers(@user)
         end
       end
     end
@@ -106,7 +106,7 @@ class OutfitUploadsFlowTest < ActionDispatch::IntegrationTest
           user_id: @user.id,
           source_photo: item_photo_upload
         }
-      }
+      }, headers: auth_headers(@user)
     end
 
     assert_response :created
@@ -151,7 +151,7 @@ class OutfitUploadsFlowTest < ActionDispatch::IntegrationTest
       position: 0
     )
 
-    get outfit_upload_url(upload), as: :json
+    get outfit_upload_url(upload), headers: auth_headers(@user), as: :json
 
     assert_response :success
     assert_equal upload.id, response_json["id"]
@@ -228,7 +228,7 @@ class OutfitUploadsFlowTest < ActionDispatch::IntegrationTest
             user_id: @user.id,
             source_photo: item_photo_upload
           }
-        }
+        }, headers: auth_headers(@user)
       end
     end
 
@@ -270,7 +270,7 @@ class OutfitUploadsFlowTest < ActionDispatch::IntegrationTest
     )
 
     with_image_cleaner_stub do
-      post generate_clean_image_outfit_detection_url(detection), as: :json
+      post generate_clean_image_outfit_detection_url(detection), headers: auth_headers(@user), as: :json
     end
 
     assert_response :success

@@ -1,13 +1,17 @@
 require "test_helper"
 
 class ImageVariantsFlowTest < ActionDispatch::IntegrationTest
+  setup do
+    @user = users(:one)
+  end
+
   test "can create a cleaned preview image from an uploaded file" do
     with_image_cleaner_stub do
       post preview_image_variants_url, params: {
         image_variant: {
           source_photo: item_photo_upload
         }
-      }
+      }, headers: auth_headers(@user)
     end
 
     assert_response :success

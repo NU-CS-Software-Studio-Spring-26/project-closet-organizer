@@ -1,4 +1,6 @@
 class ApplicationController < ActionController::API
+  include ActionController::Cookies
+
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
   before_action :set_cors_headers
 
@@ -11,16 +13,24 @@ class ApplicationController < ActionController::API
 
     headers["Access-Control-Allow-Origin"] = origin
     headers["Vary"] = "Origin"
+    headers["Access-Control-Allow-Credentials"] = "true"
     headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, PUT, DELETE, OPTIONS"
     headers["Access-Control-Allow-Headers"] = "Origin, Content-Type, Accept, Authorization"
   end
 
   def allowed_origins
     frontend_port = ENV.fetch("FRONTEND_PORT", "5173")
+    configured_origins = ENV.fetch("ALLOWED_ORIGINS", "")
+      .split(",")
+      .map(&:strip)
+      .reject(&:blank?)
+
     @allowed_origins ||= [
       "http://localhost:#{frontend_port}",
-      "http://127.0.0.1:#{frontend_port}"
-    ]
+      "http://127.0.0.1:#{frontend_port}",
+      request.base_url,
+      *configured_origins
+    ].compact.uniq
   end
 
   def render_not_found(exception)
@@ -31,8 +41,28 @@ class ApplicationController < ActionController::API
     render json: { errors: record.errors.full_messages }, status: :unprocessable_content
   end
 
+  def current_user
+    return @current_user if defined?(@current_user)
+
+    @current_user = User.find_by(id: test_user_id || session[:user_id])
+  end
+
+  def logged_in?
+    current_user.present?
+  end
+
+  def require_login
+    return if logged_in?
+
+    render_unauthorized("Please sign in with Google.")
+  end
+
+  def render_unauthorized(message = "Unauthorized")
+    render json: { error: message }, status: :unauthorized
+  end
+
   def user_payload(user, include_items: true)
-    payload = user.serializable_hash(only: %i[id username preferred_style created_at updated_at])
+    payload = user.serializable_hash(only: %i[ id username preferred_style email avatar_url created_at updated_at ])
 
     if include_items
       payload["clothing_items"] = user.clothing_items.order(:name).map do |item|
@@ -112,5 +142,11 @@ class ApplicationController < ActionController::API
     payload["final_box"] = outfit_detection.final_box
     payload["cleaned_image_url"] = outfit_detection.cleaned_photo.attached? ? url_for(outfit_detection.cleaned_photo) : nil
     payload
+  end
+
+  def test_user_id
+    return unless Rails.env.test?
+
+    request.headers["X-Test-User-Id"].presence
   end
 end

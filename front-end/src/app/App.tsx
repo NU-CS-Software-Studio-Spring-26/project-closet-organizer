@@ -9,11 +9,13 @@ import { UserDetailPage } from "./components/UserDetailPage";
 import { UsersDirectoryPage } from "./components/UsersDirectoryPage";
 import { stagePendingCreateItemImage } from "./lib/pendingCreateItemImage";
 import {
+  beginGoogleSignIn,
   ClothingItem,
   CreateItemMode,
   fetchClosetOwner,
   formatPossessive,
   formatPreferredStyle,
+  logoutSession,
   titleize,
   User,
 } from "./lib/closet";
@@ -146,6 +148,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [homeMessage, setHomeMessage] = useState("");
 
   useEffect(() => {
     const handlePopState = () => setRoute(getRouteFromLocation());
@@ -163,9 +166,15 @@ export default function App() {
     async function loadCloset() {
       setIsLoading(true);
       setErrorMessage("");
+      setHomeMessage("");
 
       try {
         const nextUser = await fetchClosetOwner(controller.signal);
+        if (!nextUser) {
+          setHomeMessage("Please sign in with Google to open your closet.");
+          navigateTo("/");
+          return;
+        }
         setUser(nextUser);
       } catch (error) {
         if (!controller.signal.aborted) {
@@ -222,11 +231,11 @@ export default function App() {
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <button
-              onClick={() => navigateTo("/closet")}
+              onClick={() => beginGoogleSignIn()}
               className="inline-flex items-center justify-center gap-3 px-6 py-3 border border-border hover:border-foreground transition-colors"
               style={{ fontFamily: "Outfit, sans-serif" }}
             >
-              Open Closet
+              Sign in with Google
               <ArrowRight className="w-4 h-4" />
             </button>
             <button
@@ -238,6 +247,11 @@ export default function App() {
               <Users className="w-4 h-4" />
             </button>
           </div>
+          {homeMessage ? (
+            <p className="text-sm text-muted-foreground mt-6" style={{ fontFamily: "Outfit, sans-serif" }}>
+              {homeMessage}
+            </p>
+          ) : null}
         </motion.div>
       </div>
     );
@@ -392,12 +406,23 @@ export default function App() {
                 }}
               />
               <button
-                onClick={() => navigateTo("/users")}
+                onClick={async () => {
+                  try {
+                    await logoutSession();
+                  } catch (error) {
+                    setErrorMessage(
+                      error instanceof Error ? error.message : "Unable to sign out right now.",
+                    );
+                    return;
+                  }
+                  setUser(null);
+                  navigateTo("/");
+                }}
                 className="flex items-center justify-center gap-3 px-5 py-3 border border-border hover:border-foreground transition-colors"
                 style={{ fontFamily: "Outfit, sans-serif" }}
               >
                 <Users className="w-4 h-4" />
-                All Users
+                Sign Out
               </button>
             </motion.div>
           </div>

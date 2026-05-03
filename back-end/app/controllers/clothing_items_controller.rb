@@ -1,8 +1,10 @@
 class ClothingItemsController < ApplicationController
   before_action :set_clothing_item, only: %i[show update destroy generate_clean_image]
+  before_action :require_login
+  before_action :set_clothing_item, only: %i[ show update destroy generate_clean_image ]
 
   def index
-    @clothing_items = ClothingItem.includes(:user).order(:name)
+    @clothing_items = current_user.clothing_items.includes(:user).order(:name)
     render json: @clothing_items.map { |clothing_item| clothing_item_payload(clothing_item) }
   end
 
@@ -93,14 +95,14 @@ class ClothingItemsController < ApplicationController
   private
 
   def set_clothing_item
-    @clothing_item = ClothingItem.find(params[:id])
+    @clothing_item = current_user.clothing_items.find(params[:id])
   end
 
   def clothing_item_attributes
     base_params = params.require(:clothing_item).permit(:name, :size, :date, :user_id)
     tag_params = params.require(:clothing_item).permit(:material, :season, :style, :brand, :color).to_h.compact_blank
 
-    base_params.merge(tags: tag_params)
+    base_params.merge(tags: tag_params, user_id: current_user.id)
   end
 
   def attach_photo_from_request(clothing_item, temporary_files)
@@ -230,7 +232,9 @@ class ClothingItemsController < ApplicationController
     return @source_outfit_detection if defined?(@source_outfit_detection)
     return @source_outfit_detection = nil if detection_id.blank?
 
-    @source_outfit_detection = OutfitDetection.find_by(id: detection_id)
+    @source_outfit_detection = OutfitDetection
+      .joins(:outfit_upload)
+      .find_by(id: detection_id, outfit_uploads: { user_id: current_user.id })
     return @source_outfit_detection if @source_outfit_detection
 
     @clothing_item.errors.add(:base, "Selected detection could not be found")
