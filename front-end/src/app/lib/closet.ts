@@ -37,6 +37,7 @@ export interface UserSummary {
   id: number;
   username: string;
   preferred_style?: string | null;
+  admin: boolean;
 }
 
 export interface ClothingItem {
@@ -274,7 +275,7 @@ export async function fetchUsers(signal?: AbortSignal) {
   const response = await fetch(`${API_BASE_URL}/users`, { credentials: "include", signal });
 
   if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`);
+    throw await buildApiError(response);
   }
 
   return (await response.json()) as User[];
@@ -284,7 +285,7 @@ export async function fetchUser(id: number, signal?: AbortSignal) {
   const response = await fetch(`${API_BASE_URL}/users/${id}`, { credentials: "include", signal });
 
   if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`);
+    throw await buildApiError(response);
   }
 
   return (await response.json()) as User;

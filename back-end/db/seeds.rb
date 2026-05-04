@@ -84,6 +84,7 @@ seed_users = [
     provider: "google_oauth2",
     uid: "seed-annabel-goldman",
     password: "password",
+    admin: true,
     preferred_style: "polished",
     size_profile: :standard,
     item_count: 0
@@ -147,6 +148,7 @@ seed_users.each do |user_data|
     provider: user_data[:provider],
     uid: user_data[:uid],
     password: user_data[:password],
+    admin: user_data.fetch(:admin, false),
     preferred_style: user_data[:preferred_style]
   )
 

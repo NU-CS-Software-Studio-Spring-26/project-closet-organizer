@@ -26,6 +26,7 @@ export function UserDetailPage({
   const [user, setUser] = useState<User | null>(initialUser ?? null);
   const [isLoading, setIsLoading] = useState(!initialUser);
   const [errorMessage, setErrorMessage] = useState("");
+  const isForbidden = /not authorized/i.test(errorMessage);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -89,7 +90,7 @@ export function UserDetailPage({
           </button>
           <div className="border border-destructive/20 bg-destructive/5 p-6">
             <p className="text-lg mb-2" style={{ fontFamily: "Cormorant Garamond, serif" }}>
-              This user could not be loaded.
+              {isForbidden ? "You are not authorized to view this profile." : "This user could not be loaded."}
             </p>
             <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
               {errorMessage || "The requested user may have been removed."}

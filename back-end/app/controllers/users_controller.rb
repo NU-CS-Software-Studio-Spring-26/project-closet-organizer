@@ -1,9 +1,10 @@
 class UsersController < ApplicationController
   before_action :require_login
+  before_action :require_admin, only: %i[index show]
   before_action :set_user, only: %i[ show update destroy ]
 
   def index
-    render json: [ user_payload(current_user) ]
+    render json: User.order(:username).map { |user| user_payload(user) }
   end
 
   def show
@@ -30,7 +31,7 @@ class UsersController < ApplicationController
   private
 
   def set_user
-    @user = current_user
+    @user = admin? ? User.find(params[:id]) : current_user
   end
 
   def user_params

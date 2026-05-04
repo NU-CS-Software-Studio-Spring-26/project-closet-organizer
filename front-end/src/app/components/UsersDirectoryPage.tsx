@@ -18,6 +18,7 @@ export function UsersDirectoryPage({ onBack, onSelectUser }: UsersDirectoryPageP
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const isForbidden = /not authorized/i.test(errorMessage);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -53,7 +54,7 @@ export function UsersDirectoryPage({ onBack, onSelectUser }: UsersDirectoryPageP
           className="inline-flex items-center gap-2 mb-8 text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to closet
+          Back home
         </button>
 
         <div className="flex items-end justify-between gap-6 mb-10">
@@ -78,7 +79,7 @@ export function UsersDirectoryPage({ onBack, onSelectUser }: UsersDirectoryPageP
         {errorMessage ? (
           <div className="border border-destructive/20 bg-destructive/5 p-6">
             <p className="text-lg mb-2" style={{ fontFamily: "Cormorant Garamond, serif" }}>
-              Users could not be loaded.
+              {isForbidden ? "You are not authorized to view this directory." : "Users could not be loaded."}
             </p>
             <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
               {errorMessage}

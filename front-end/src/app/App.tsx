@@ -55,6 +55,14 @@ type AppRoute =
   | UserRouteState
   | NewItemRouteState;
 
+function isClosetRoute(route: AppRoute) {
+  return route.kind === "closet" || route.kind === "item" || route.kind === "new-item";
+}
+
+function isProtectedRoute(route: AppRoute) {
+  return route.kind !== "home";
+}
+
 function parseCreateItemMode(value: string | null): CreateItemMode {
   return value === "image" ? "image" : "manual";
 }
@@ -147,24 +155,27 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (route.kind !== "closet") {
+    if (!isProtectedRoute(route)) {
       return;
     }
 
     const controller = new AbortController();
+    const unauthorizedMessage = "You do not have permission to view this page. Please log in.";
 
-    async function loadCloset() {
+    async function loadProtectedRoute() {
       setIsLoading(true);
       setErrorMessage("");
-      setHomeMessage("");
 
       try {
         const nextUser = await fetchClosetOwner(controller.signal);
         if (!nextUser) {
-          setHomeMessage("Please sign in with Google to open your closet.");
+          setUser(null);
+          setHomeMessage(unauthorizedMessage);
           navigateTo("/");
           return;
         }
+
+        setHomeMessage("");
         setUser(nextUser);
       } catch (error) {
         if (!controller.signal.aborted) {
@@ -180,12 +191,13 @@ export default function App() {
       }
     }
 
-    loadCloset();
+    loadProtectedRoute();
 
     return () => controller.abort();
   }, [route.kind]);
 
   const clothingItems = user?.clothing_items ?? [];
+  const isLoggedOutProtectedRoute = isProtectedRoute(route) && !user;
 
   const closetTitle = user ? formatPossessive(titleize(user.username)) : "Your Closet";
   const preferredStyle = formatPreferredStyle(user?.preferred_style);
@@ -194,9 +206,45 @@ export default function App() {
       ? clothingItems.find((item) => item.id === route.itemId) ?? null
       : null;
 
-  if (route.kind === "home") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+  const globalAction = user ? (
+    <button
+      onClick={async () => {
+        try {
+          await logoutSession();
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : "Unable to sign out right now.");
+          return;
+        }
+
+        setUser(null);
+        navigateTo("/");
+      }}
+      className="inline-flex items-center justify-center gap-3 border border-border px-4 py-2.5 text-sm transition-colors hover:border-foreground"
+      style={{ fontFamily: "Outfit, sans-serif" }}
+    >
+      <Users className="h-4 w-4" />
+      Sign Out
+    </button>
+  ) : (
+    <button
+      onClick={() => beginGoogleSignIn()}
+      className="inline-flex items-center justify-center gap-3 border border-border px-4 py-2.5 text-sm transition-colors hover:border-foreground"
+      style={{ fontFamily: "Outfit, sans-serif" }}
+    >
+      Sign In
+      <ArrowRight className="h-4 w-4" />
+    </button>
+  );
+
+  let pageContent;
+
+  if (isLoggedOutProtectedRoute && isLoading) {
+    return <div className="min-h-screen bg-background" />;
+  }
+
+  if (route.kind === "home" || (isLoggedOutProtectedRoute && !isLoading)) {
+    pageContent = (
+      <section className="flex flex-1 items-center justify-center px-6 py-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -214,7 +262,7 @@ export default function App() {
             Closet Organizer
           </h1>
           <p
-            className="text-lg text-muted-foreground mb-10"
+            className="mb-10 text-lg text-muted-foreground"
             style={{ fontFamily: "Outfit, sans-serif", lineHeight: "1.7" }}
           >
             Organize clothing items, manage closet details.
@@ -222,44 +270,32 @@ export default function App() {
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <button
               onClick={() => beginGoogleSignIn()}
-              className="inline-flex items-center justify-center gap-3 px-6 py-3 border border-border hover:border-foreground transition-colors"
+              className="inline-flex items-center justify-center gap-3 border border-border px-6 py-3 transition-colors hover:border-foreground"
               style={{ fontFamily: "Outfit, sans-serif" }}
             >
               Sign in with Google
-              <ArrowRight className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => navigateTo("/users")}
-              className="inline-flex items-center justify-center gap-3 px-6 py-3 border border-border hover:border-foreground transition-colors"
-              style={{ fontFamily: "Outfit, sans-serif" }}
-            >
-              View Our Users
-              <Users className="w-4 h-4" />
+              <ArrowRight className="h-4 w-4" />
             </button>
           </div>
           {homeMessage ? (
-            <p className="text-sm text-muted-foreground mt-6" style={{ fontFamily: "Outfit, sans-serif" }}>
-              {homeMessage}
-            </p>
+            <div className="mt-6 border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              <p style={{ fontFamily: "Outfit, sans-serif" }}>{homeMessage}</p>
+            </div>
           ) : null}
         </motion.div>
-      </div>
+      </section>
     );
-  }
-
-  if (route.kind === "users") {
-    return (
+  } else if (route.kind === "users") {
+    pageContent = (
       <UsersDirectoryPage
         onBack={() => navigateTo("/")}
         onSelectUser={(userId) => navigateTo(`/users/${userId}`)}
       />
     );
-  }
-
-  if (route.kind === "user") {
+  } else if (route.kind === "user") {
     const selectedUser = user?.id === route.userId ? user : null;
 
-    return (
+    pageContent = (
       <UserDetailPage
         userId={route.userId}
         initialUser={selectedUser}
@@ -267,162 +303,127 @@ export default function App() {
         onOpenItem={(itemId) => navigateTo(`/items/${itemId}`)}
       />
     );
-  }
-
-  if (route.kind === "new-item") {
+  } else if (route.kind === "new-item") {
     const targetUser =
       route.userId && user?.id === route.userId ? user : route.userId ? null : user;
     const targetUserId = route.userId ?? user?.id ?? null;
 
-    return (
-      <div className="min-h-screen bg-background">
-        <CreateItemPage
-          key={`${targetUserId ?? "none"}-${route.mode}`}
-          userId={targetUserId}
-          initialMode={route.mode}
-          initialUser={targetUser}
-          onBack={() => {
-            if (route.mode === "image") {
-              navigateTo("/closet");
-              return;
-            }
-
-            if (route.userId) {
-              navigateTo(`/users/${route.userId}`);
-              return;
-            }
-
+    pageContent = (
+      <CreateItemPage
+        key={`${targetUserId ?? "none"}-${route.mode}`}
+        userId={targetUserId}
+        initialMode={route.mode}
+        initialUser={targetUser}
+        onBack={() => {
+          if (route.mode === "image") {
             navigateTo("/closet");
-          }}
-          onItemsCreated={(nextItems) => {
-            setUser((current) => {
-              if (!current || current.id !== targetUserId || nextItems.length === 0) {
-                return current;
-              }
+            return;
+          }
 
-              return {
-                ...current,
-                clothing_items: [...current.clothing_items, ...nextItems].sort((left, right) =>
-                  left.name.localeCompare(right.name),
-                ),
-              };
-            });
+          if (route.userId) {
+            navigateTo(`/users/${route.userId}`);
+            return;
+          }
 
-            if (route.mode === "image") {
-              navigateTo("/closet");
-              return;
+          navigateTo("/closet");
+        }}
+        onItemsCreated={(nextItems) => {
+          setUser((current) => {
+            if (!current || current.id !== targetUserId || nextItems.length === 0) {
+              return current;
             }
 
-            navigateTo(`/items/${nextItems[0].id}`);
-          }}
-        />
-      </div>
-    );
-  }
+            return {
+              ...current,
+              clothing_items: [...current.clothing_items, ...nextItems].sort((left, right) =>
+                left.name.localeCompare(right.name),
+              ),
+            };
+          });
 
-  if (route.kind === "item") {
-    return (
-      <div className="min-h-screen bg-background">
-        <ItemDetailPage
-          itemId={route.itemId}
-          initialItem={selectedItem}
-          onBack={() => navigateTo("/closet")}
-          onItemSaved={(nextItem) => setUser((current) => updateUserItem(current, nextItem))}
-          onItemDeleted={(itemId) => {
-            setUser((current) => removeUserItem(current, itemId));
+          if (route.mode === "image") {
             navigateTo("/closet");
-          }}
-        />
-      </div>
+            return;
+          }
+
+          navigateTo(`/items/${nextItems[0].id}`);
+        }}
+      />
     );
-  }
-
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex items-end justify-between mb-8 gap-6">
-            <div>
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-                className="mb-2 tracking-tight"
-                style={{
-                  fontFamily: "Cormorant Garamond, serif",
-                  fontSize: "clamp(2.5rem, 5vw, 4rem)",
-                  lineHeight: "1",
-                }}
-              >
-                {closetTitle}
-              </motion.h1>
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className="text-muted-foreground tracking-wide"
-                style={{ fontFamily: "Outfit, sans-serif" }}
-              >
-                {isLoading
-                  ? "Loading items from your backend..."
-                  : `${clothingItems.length} ${clothingItems.length === 1 ? "item" : "items"}${
-                      preferredStyle ? ` · ${preferredStyle} style` : ""
-                    }`}
-              </motion.p>
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
+  } else if (route.kind === "item") {
+    pageContent = (
+      <ItemDetailPage
+        itemId={route.itemId}
+        initialItem={selectedItem}
+        onBack={() => navigateTo("/closet")}
+        onItemSaved={(nextItem) => setUser((current) => updateUserItem(current, nextItem))}
+        onItemDeleted={(itemId) => {
+          setUser((current) => removeUserItem(current, itemId));
+          navigateTo("/closet");
+        }}
+      />
+    );
+  } else {
+    pageContent = (
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <div className="mb-8 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+          <div>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="mb-2 tracking-tight"
+              style={{
+                fontFamily: "Cormorant Garamond, serif",
+                fontSize: "clamp(2.5rem, 5vw, 4rem)",
+                lineHeight: "1",
+              }}
             >
-              <AddItemMenu
-                disabled={!user}
-                onSelectImage={() => {
-                  if (!user) {
-                    return;
-                  }
-
-                  navigateTo(`/items/new?userId=${user.id}&mode=image`);
-                }}
-                onSelectManual={() => {
-                  if (!user) {
-                    return;
-                  }
-
-                  navigateTo(`/items/new?userId=${user.id}&mode=manual`);
-                }}
-              />
-              <button
-                onClick={async () => {
-                  try {
-                    await logoutSession();
-                  } catch (error) {
-                    setErrorMessage(
-                      error instanceof Error ? error.message : "Unable to sign out right now.",
-                    );
-                    return;
-                  }
-                  setUser(null);
-                  navigateTo("/");
-                }}
-                className="flex items-center justify-center gap-3 px-5 py-3 border border-border hover:border-foreground transition-colors"
-                style={{ fontFamily: "Outfit, sans-serif" }}
-              >
-                <Users className="w-4 h-4" />
-                Sign Out
-              </button>
-            </motion.div>
+              {closetTitle}
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="tracking-wide text-muted-foreground"
+              style={{ fontFamily: "Outfit, sans-serif" }}
+            >
+              {isLoading
+                ? "Loading items from your backend..."
+                : `${clothingItems.length} ${clothingItems.length === 1 ? "item" : "items"}${
+                    preferredStyle ? ` · ${preferredStyle} style` : ""
+                  }`}
+            </motion.p>
           </div>
 
-        </div>
-      </header>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <AddItemMenu
+              disabled={!user}
+              onSelectImage={() => {
+                if (!user) {
+                  return;
+                }
 
-      <main className="max-w-7xl mx-auto px-6 py-12">
+                navigateTo(`/items/new?userId=${user.id}&mode=image`);
+              }}
+              onSelectManual={() => {
+                if (!user) {
+                  return;
+                }
+
+                navigateTo(`/items/new?userId=${user.id}&mode=manual`);
+              }}
+            />
+          </motion.div>
+        </div>
+
         {errorMessage ? (
           <div className="border border-destructive/20 bg-destructive/5 p-6">
-            <p className="text-lg mb-2" style={{ fontFamily: "Cormorant Garamond, serif" }}>
+            <p className="mb-2 text-lg" style={{ fontFamily: "Cormorant Garamond, serif" }}>
               The closet data could not be loaded.
             </p>
             <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
@@ -430,12 +431,12 @@ export default function App() {
             </p>
           </div>
         ) : isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
+          <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="animate-pulse space-y-3">
+              <div key={index} className="space-y-3 animate-pulse">
                 <div className="aspect-[3/4] bg-muted" />
-                <div className="h-6 bg-muted w-2/3" />
-                <div className="h-4 bg-muted w-1/2" />
+                <div className="h-6 w-2/3 bg-muted" />
+                <div className="h-4 w-1/2 bg-muted" />
               </div>
             ))}
           </div>
@@ -453,7 +454,7 @@ export default function App() {
             </motion.div>
 
             {user && clothingItems.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
+              <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {clothingItems.map((item, index) => (
                   <ClothingCard
                     key={item.id}
@@ -465,19 +466,69 @@ export default function App() {
               </div>
             ) : (
               <div className="border border-dashed border-border p-10 text-center">
-                <p className="text-2xl mb-3" style={{ fontFamily: "Cormorant Garamond, serif" }}>
+                <p className="mb-3 text-2xl" style={{ fontFamily: "Cormorant Garamond, serif" }}>
                   {user ? "No matching items yet" : "No closet data found"}
                 </p>
                 <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
                   {user
-                    ? "Try another search or filter, or add clothing items in the backend."
-                    : "Create or seed a user in the Rails app and refresh this page."}
+                    ? "Add a new item to start building out this closet."
+                    : "Sign in with Google to load your closet."}
                 </p>
               </div>
             )}
           </>
         )}
-      </main>
+      </div>
+    );
+  }
+
+  if (route.kind === "home" && !user) {
+    return <div className="flex min-h-screen flex-col bg-background">{pageContent}</div>;
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-5">
+          <button
+            onClick={() => navigateTo("/")}
+            className="inline-flex items-center justify-center border border-border px-4 py-2.5 text-sm transition-colors hover:border-foreground"
+            style={{ fontFamily: "Outfit, sans-serif" }}
+          >
+            Home
+          </button>
+
+          <div className="flex items-center gap-3">
+            {user ? (
+              <nav className="flex items-center gap-2">
+                <button
+                  onClick={() => navigateTo("/closet")}
+                  className={`inline-flex items-center justify-center border px-4 py-2.5 text-sm transition-colors ${
+                    isClosetRoute(route)
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border text-foreground hover:border-foreground"
+                  }`}
+                  style={{ fontFamily: "Outfit, sans-serif" }}
+                >
+                  Closet
+                </button>
+              </nav>
+            ) : null}
+            {globalAction}
+          </div>
+        </div>
+      </header>
+
+      <main className={`flex-1 ${route.kind === "home" ? "flex" : ""}`}>{pageContent}</main>
+
+      <footer className="border-t border-border">
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <p style={{ fontFamily: "Outfit, sans-serif" }}>
+            Curating closets and serving looks, one hanger at a time.
+          </p>
+          <p style={{ fontFamily: "Outfit, sans-serif" }}>Pressed, polished, and ready for the runway.</p>
+        </div>
+      </footer>
     </div>
   );
 }
