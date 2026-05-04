@@ -7,8 +7,8 @@ import {
   createOutfit,
   destroyOutfit,
   fetchOutfits,
+  formatTagLabel,
   Outfit,
-  titleize,
   updateOutfit,
   User,
 } from "../lib/closet";
@@ -304,7 +304,7 @@ export function MyOutfitsPage({
                     <div className="min-w-0 flex-1">
                       <p className="truncate" style={{ fontFamily: "Outfit, sans-serif" }}>{item.name}</p>
                       <p className="text-xs text-muted-foreground truncate" style={{ fontFamily: "Outfit, sans-serif" }}>
-                        {item.tags.style ? titleize(item.tags.style) : "Unstyled"}
+                        {item.tags.length > 0 ? formatTagLabel(item.tags[0]) : "Unstyled"}
                       </p>
                     </div>
 
@@ -441,7 +441,7 @@ export function MyOutfitsPage({
                           <p style={{ fontFamily: "Outfit, sans-serif" }}>{item.name}</p>
                           <p className="text-xs text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
                             <Shirt className="inline w-3 h-3 mr-1" />
-                            {item.tags.style ? titleize(item.tags.style) : "Unstyled"}
+                            {item.tags.length > 0 ? formatTagLabel(item.tags[0]) : "Unstyled"}
                           </p>
                         </div>
                       </div>

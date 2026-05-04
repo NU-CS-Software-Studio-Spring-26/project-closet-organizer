@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.8 - 2026-05-04
+
+- Added visible auth feedback for failed Google sign-in attempts and successful logout on the frontend landing flow.
+- Added a dedicated frontend 404 state for unknown SPA routes instead of falling back to the closet page.
+- Fixed outfit item tag labels to read from the current array-based tag model and removed duplicate env-loader logic from `start.sh`.
+
 ## v1.0.7 - 2026-05-04
 
 - Updated Google sign-in to reuse an existing seeded user when the Google account email already exists in the database.
