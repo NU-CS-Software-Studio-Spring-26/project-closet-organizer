@@ -61,60 +61,14 @@ SIZE_PROFILES = {
 
 seed_users = [
   {
-    username: "alexis_ward",
-    email: "alexis.ward@example.com",
-    provider: "google_oauth2",
-    uid: "seed-alexis-ward",
-    password: "password",
-    preferred_style: "smart_casual",
-    size_profile: :standard,
-    item_count: 20
-  },
-  {
     username: "annabel_goldman",
-    email: "annabel.goldman@example.com",
+    email: "annabelgoldman2025@u.northwestern.edu",
     provider: "google_oauth2",
     uid: "seed-annabel-goldman",
     password: "password",
     admin: true,
     preferred_style: "polished",
-    item_count: 0
-  },
-  {
-    username: "jordan_lee",
-    email: "jordan.lee@example.com",
-    provider: "google_oauth2",
-    uid: "seed-jordan-lee",
-    password: "password",
-    preferred_style: "athleisure",
-    items: [
-      { name: "Heather Gray Running Hoodie", size: :large, date: Date.new(2026, 2, 2), tags: [ "nike", "performance fleece", "gray", "active", "hoodie" ] },
-      { name: "Black Training Joggers", size: :large, date: Date.new(2026, 1, 24), tags: [ "lululemon", "recycled polyester", "black", "active", "joggers" ] },
-      { name: "Forest Performance Tee", size: :medium, date: Date.new(2026, 3, 22), tags: [ "under armour", "moisture wicking", "green", "gym", "tee" ] },
-      { name: "Navy Quarter-Zip Pullover", size: :large, date: Date.new(2025, 11, 3), tags: [ "vuori", "polyester", "navy", "layering", "athleisure" ] },
-      { name: "Stone Utility Shorts", size: :medium, date: Date.new(2025, 8, 19), tags: [ "ten thousand", "nylon", "stone", "summer", "training" ] },
-      { name: "Trail Running Vest", size: :medium, date: Date.new(2025, 10, 7), tags: [ "patagonia", "ripstop", "black", "outdoors", "running" ] },
-      { name: "White Court Sneakers", size: :large, date: Date.new(2025, 7, 14), tags: [ "adidas", "leather", "white", "sport", "sneakers" ] },
-      { name: "Slate Rain Shell Jacket", size: :large, date: Date.new(2026, 4, 12), tags: [ "arcteryx", "nylon", "slate", "outerwear", "rainy day" ] }
-    ]
-  },
-  {
-    username: "maya_patel",
-    email: "maya.patel@example.com",
-    provider: "google_oauth2",
-    uid: "seed-maya-patel",
-    password: "password",
-    preferred_style: "minimal",
-    items: [
-      { name: "Oat Linen Blazer", size: :small, date: Date.new(2026, 3, 18), tags: [ "mango", "linen", "oat", "blazer", "capsule" ] },
-      { name: "Black Rib Tank", size: :xs, date: Date.new(2026, 4, 4), tags: [ "uniqlo", "cotton", "black", "minimal", "tank" ] },
-      { name: "Cream Slip Skirt", size: :small, date: Date.new(2025, 6, 9), tags: [ "zara", "satin", "cream", "dressy", "soft" ] },
-      { name: "Charcoal Merino Sweater", size: :small, date: Date.new(2025, 12, 11), tags: [ "cos", "merino wool", "charcoal", "cozy", "sweater" ] },
-      { name: "Brown Ankle Boots", size: :small, date: Date.new(2025, 10, 1), tags: [ "steve madden", "suede", "brown", "boots", "classic" ] },
-      { name: "Light Wash Denim Jacket", size: :medium, date: Date.new(2025, 9, 21), tags: [ "levis", "denim", "light blue", "layering", "weekend" ] },
-      { name: "Soft White T-Shirt", size: :small, date: Date.new(2026, 2, 27), tags: [ "everlane", "cotton", "white", "basics", "everyday" ] },
-      { name: "Sand Pleated Trousers", size: :small, date: Date.new(2025, 11, 29), tags: [ "aritzia", "twill", "sand", "tailored", "office" ] }
-    ]
+    item_count: 20
   }
 ]
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.6 - 2026-05-04
+
+- Simplified demo seed data so the database now creates the real Northwestern admin account instead of additional Google users you cannot sign into locally.
+- Seeded `annabelgoldman2025@u.northwestern.edu` with admin access and a 20-item demo closet.
+- Removed extra seeded demo users so the development data better matches the team’s actual login flow.
+
 ## v1.0.5 - 2026-05-04
 
 - Fixed the manual add-item back button so it consistently returns users to the closet page.
