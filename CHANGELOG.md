@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.7 - 2026-05-04
+
+- Updated Google sign-in to reuse an existing seeded user when the Google account email already exists in the database.
+- Preserved seeded admin access by attaching the real Google UID to the existing user record instead of creating a duplicate account.
+- Added regression test coverage for same-email and case-insensitive Google sign-in reuse.
+
 ## v1.0.6 - 2026-05-04
 
 - Simplified demo seed data so the database now creates the real Northwestern admin account instead of additional Google users you cannot sign into locally.

@@ -59,4 +59,58 @@ class UserTest < ActiveSupport::TestCase
     assert_equal "alex", user.username
     assert_equal "updated-alex@example.com", user.email
   end
+
+  test "google auth reuses an existing user with the same email" do
+    seeded_user = User.create!(
+      username: "annabel_goldman",
+      email: "annabelgoldman2025@u.northwestern.edu",
+      provider: "google_oauth2",
+      uid: "seed-annabel-goldman",
+      admin: true,
+      password: "password123"
+    )
+
+    auth_hash = OpenStruct.new(
+      provider: "google_oauth2",
+      uid: "real-google-uid-123",
+      info: OpenStruct.new(
+        email: "annabelgoldman2025@u.northwestern.edu",
+        name: "Annabel Goldman",
+        image: "https://example.com/annabel.png"
+      )
+    )
+
+    user = User.from_google_auth(auth_hash)
+
+    assert_equal seeded_user.id, user.id
+    assert_equal "annabel_goldman", user.username
+    assert_equal "real-google-uid-123", user.uid
+    assert user.admin?
+  end
+
+  test "google auth reuses an existing user with the same email regardless of case" do
+    seeded_user = User.create!(
+      username: "annabel_goldman_case",
+      email: "annabelgoldman2025@u.northwestern.edu",
+      provider: "google_oauth2",
+      uid: "seed-annabel-goldman-case",
+      admin: true,
+      password: "password123"
+    )
+
+    auth_hash = OpenStruct.new(
+      provider: "google_oauth2",
+      uid: "real-google-uid-456",
+      info: OpenStruct.new(
+        email: "ANNABELGOLDMAN2025@u.northwestern.edu",
+        name: "Annabel Goldman",
+        image: "https://example.com/annabel.png"
+      )
+    )
+
+    user = User.from_google_auth(auth_hash)
+
+    assert_equal seeded_user.id, user.id
+    assert_equal "real-google-uid-456", user.uid
+  end
 end
