@@ -14,6 +14,7 @@ interface ClothingCardProps {
   image_url?: string | null;
   index: number;
   onSelect?: (id: number) => void;
+  onAddToOutfit?: (id: number) => void;
 }
 
 export function ClothingCard({
@@ -24,6 +25,7 @@ export function ClothingCard({
   image_url,
   index,
   onSelect,
+  onAddToOutfit,
 }: ClothingCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const visibleTags = tags.slice(0, 3);
@@ -123,6 +125,7 @@ export function ClothingCard({
           <button
             onClick={(event) => {
               event.stopPropagation();
+              onAddToOutfit?.(id);
             }}
             className="w-full bg-white/90 backdrop-blur-sm px-4 py-2 hover:bg-white transition-colors flex items-center justify-center gap-2"
           >

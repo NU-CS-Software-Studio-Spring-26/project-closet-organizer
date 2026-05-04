@@ -1,10 +1,25 @@
 # Changelog
 
+## v1.0.4 - 2026-05-04
+
+- Merged the tag-based closet search and relaxed item schema work with the new outfits and lookbook experience from `main`.
+- Preserved the polished closet filter bar updates alongside the My Outfits page, outfit draft persistence, and outfits CRUD support.
+- Synced the branch to the current Milestone 1 codebase and tagged the combined release head.
+
 ## v1.0.3 - 2026-05-04
 
 - Reworked clothing item metadata into a relaxed tag-based schema for create, edit, seed, and API payload flows.
 - Added closet search, tag filtering, and sort controls aligned with the new tag-driven item model.
 - Polished the closet filter bar layout so the search field and dropdown controls feel cleaner and more consistent.
+
+## v1.0.2 - 2026-05-03
+
+- Added full outfits support across back-end and front-end, including outfit CRUD endpoints, user-scoped authorization, and outfit-to-item associations.
+- Introduced new data models and schema updates for outfits and outfit items, including ownership validation and uniqueness constraints.
+- Added the My Outfits experience with create/edit/delete flows and outfit item grouping from closet pieces.
+- Added persistent outfit draft behavior so selected item IDs are saved per user and restored from local storage.
+- Added and refined flash/toast notifications for outfit load/save/update/delete outcomes and draft confirmations.
+- Added automated test coverage for outfit flows and validations, including integration tests and model tests for Outfit and OutfitItem.
 
 ## v1.0.1 - 2026-05-03
 

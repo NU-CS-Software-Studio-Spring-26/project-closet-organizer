@@ -1,5 +1,7 @@
 class ClothingItem < ApplicationRecord
   belongs_to :user
+  has_many :outfit_items, dependent: :destroy
+  has_many :outfits, through: :outfit_items
   has_one_attached :photo
   has_one_attached :cleaned_photo
   before_validation :normalize_tags

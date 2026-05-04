@@ -1,0 +1,14 @@
+one:
+  user: one
+  name: Weekend Capsule
+  tags:
+    - casual
+    - spring
+  notes: Light layers for weekend errands.
+
+two:
+  user: two
+  name: Work Rotation
+  tags:
+    - office
+  notes: Smart-casual office options.
