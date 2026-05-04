@@ -6,13 +6,27 @@ on:
     branches: [ main ]
 
 jobs:
+  lockfiles:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Ensure root and backend lockfiles stay in sync
+        run: |
+          cmp -s Gemfile.lock back-end/Gemfile.lock || {
+            echo "Gemfile.lock and back-end/Gemfile.lock differ."
+            echo "Run bundle install from the repo root and from back-end, then commit both lockfiles."
+            exit 1
+          }
+
   scan_ruby:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: back-end
     env:
-      BUNDLE_GEMFILE: ${{ github.workspace }}/back-end/Gemfile
+      BUNDLE_GEMFILE: ${{ github.workspace }}/Gemfile
 
     steps:
       - name: Checkout code
@@ -22,7 +36,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-          working-directory: back-end
+          working-directory: .
 
       - name: Scan for common Rails security vulnerabilities using static analysis
         run: bin/brakeman --no-pager
@@ -33,7 +47,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     env:
-      BUNDLE_GEMFILE: ${{ github.workspace }}/back-end/Gemfile
+      BUNDLE_GEMFILE: ${{ github.workspace }}/Gemfile
       RUBOCOP_CACHE_ROOT: back-end/tmp/rubocop
     defaults:
       run:
@@ -46,7 +60,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-          working-directory: back-end
+          working-directory: .
 
       - name: Prepare RuboCop cache
         uses: actions/cache@v4
@@ -67,7 +81,7 @@ jobs:
       run:
         working-directory: back-end
     env:
-      BUNDLE_GEMFILE: ${{ github.workspace }}/back-end/Gemfile
+      BUNDLE_GEMFILE: ${{ github.workspace }}/Gemfile
 
     # services:
     #  redis:
@@ -86,7 +100,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-          working-directory: back-end
+          working-directory: .
 
       - name: Run tests
         env:

@@ -41,6 +41,19 @@ By default the app runs on `http://127.0.0.1:3000`.
 
 If you are running the full repo from the root, use [start.sh](../start.sh) instead.
 
+## Bundler and Deploys
+
+Heroku resolves gems from the repository root `Gemfile`, which in turn loads this backend `Gemfile`.
+
+If you add, remove, or change a gem here, update and commit both lockfiles:
+
+```bash
+bundle install
+cd back-end && bundle install
+```
+
+The root `Gemfile.lock` is what Heroku uses during deploy, and `back-end/Gemfile.lock` is what local backend commands use.
+
 ## API Routes
 
 ```text
