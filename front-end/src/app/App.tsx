@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowRight, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, Users } from "lucide-react";
 import { AddItemMenu } from "./components/AddItemMenu";
 import { ClothingCard } from "./components/ClothingCard";
 import { CreateItemPage } from "./components/CreateItemPage";
@@ -206,6 +206,9 @@ export default function App() {
       ? clothingItems.find((item) => item.id === route.itemId) ?? null
       : null;
 
+  const isAdminRoute = route.kind === "users" || route.kind === "user";
+  const isUnauthorizedAdminRoute = Boolean(user && !user.admin && isAdminRoute);
+
   const globalAction = user ? (
     <button
       onClick={async () => {
@@ -285,10 +288,37 @@ export default function App() {
         </motion.div>
       </section>
     );
+  } else if (isUnauthorizedAdminRoute) {
+    pageContent = (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-3xl mx-auto px-6 py-16">
+          <button
+            onClick={() => navigateTo("/closet")}
+            className="inline-flex items-center gap-2 mb-8 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
+
+          <div className="border border-destructive/20 bg-destructive/5 p-8">
+            <p
+              className="uppercase tracking-[0.3em] text-xs text-destructive/80 mb-3"
+              style={{ fontFamily: "Outfit, sans-serif" }}
+            >
+              Access Restricted
+            </p>
+            <h1 className="mb-3">You are not authorized to view this page.</h1>
+            <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
+              You&apos;re not authorized to view this page.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   } else if (route.kind === "users") {
     pageContent = (
       <UsersDirectoryPage
-        onBack={() => navigateTo("/")}
+        onBack={() => navigateTo(user ? "/closet" : "/")}
         onSelectUser={(userId) => navigateTo(`/users/${userId}`)}
       />
     );
@@ -299,7 +329,7 @@ export default function App() {
       <UserDetailPage
         userId={route.userId}
         initialUser={selectedUser}
-        onBack={() => navigateTo("/users")}
+        onBack={() => navigateTo(user ? "/closet" : "/")}
         onOpenItem={(itemId) => navigateTo(`/items/${itemId}`)}
       />
     );
