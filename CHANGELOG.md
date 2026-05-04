@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.0.2 - 2026-05-03
+
+- Fixed deployed routing so browser visits to `/users` and `/users/:id` render the frontend app instead of raw JSON responses.
+- Preserved JSON authorization behavior for API requests while restoring correct SPA fallback behavior for HTML requests.
+
 ## v1.0.1 - 2026-05-03
 
 - Refined unauthorized user flows for admin-only pages and protected routes.
