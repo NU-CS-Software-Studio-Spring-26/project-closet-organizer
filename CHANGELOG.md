@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.9 - 2026-05-04
+
+- Refreshed the root `README.md`, `wiki.md`, and `PROJECT_INDEX.md` so the repository-level documentation matches the Milestone 1 app state.
+- Rewrote `back-end/README.md` to document current auth flows, outfits endpoints, image-clean routes, and seeded demo data.
+- Rewrote `front-end/README.md` to document the current signed-in closet flow, admin-only routes, outfits page, and frontend 404 behavior.
+
 ## v1.0.8 - 2026-05-04
 
 - Added visible auth feedback for failed Google sign-in attempts and successful logout on the frontend landing flow.
