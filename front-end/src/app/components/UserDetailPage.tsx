@@ -26,6 +26,7 @@ export function UserDetailPage({
   const [user, setUser] = useState<User | null>(initialUser ?? null);
   const [isLoading, setIsLoading] = useState(!initialUser);
   const [errorMessage, setErrorMessage] = useState("");
+  const isForbidden = /not authorized/i.test(errorMessage);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -59,6 +60,35 @@ export function UserDetailPage({
     return () => controller.abort();
   }, [initialUser, userId]);
 
+  if (isForbidden) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-3xl mx-auto px-6 py-16">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-2 mb-8 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
+
+          <div className="border border-destructive/20 bg-destructive/5 p-8">
+            <p
+              className="uppercase tracking-[0.3em] text-xs text-destructive/80 mb-3"
+              style={{ fontFamily: "Outfit, sans-serif" }}
+            >
+              Access Restricted
+            </p>
+            <h1 className="mb-3">You are not authorized to view this page.</h1>
+            <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
+              {errorMessage}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -89,7 +119,7 @@ export function UserDetailPage({
           </button>
           <div className="border border-destructive/20 bg-destructive/5 p-6">
             <p className="text-lg mb-2" style={{ fontFamily: "Cormorant Garamond, serif" }}>
-              This user could not be loaded.
+              {isForbidden ? "You are not authorized to view this profile." : "This user could not be loaded."}
             </p>
             <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
               {errorMessage || "The requested user may have been removed."}

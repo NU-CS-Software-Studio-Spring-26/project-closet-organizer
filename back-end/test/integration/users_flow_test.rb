@@ -3,20 +3,35 @@ require "test_helper"
 class UsersFlowTest < ActionDispatch::IntegrationTest
   setup do
     @user = users(:one)
+    @admin = users(:two)
   end
 
-  test "users index loads" do
-    get users_url, headers: auth_headers(@user), as: :json
+  test "admin can load users index" do
+    get users_url, headers: auth_headers(@admin), as: :json
 
     assert_response :success
-    assert_equal @user.username, response_json.first["username"]
+    assert_equal [ @user.username, @admin.username ].sort, response_json.map { |user| user["username"] }
   end
 
-  test "user show loads" do
-    get user_url(@user), headers: auth_headers(@user), as: :json
+  test "non-admin cannot load users index" do
+    get users_url, headers: auth_headers(@user), as: :json
+
+    assert_response :forbidden
+    assert_equal "You're not authorized to view this page.", response_json["error"]
+  end
+
+  test "admin can load user show" do
+    get user_url(@user), headers: auth_headers(@admin), as: :json
 
     assert_response :success
     assert_equal @user.username, response_json["username"]
+  end
+
+  test "non-admin cannot load user show" do
+    get user_url(@admin), headers: auth_headers(@user), as: :json
+
+    assert_response :forbidden
+    assert_equal "You're not authorized to view this page.", response_json["error"]
   end
 
   test "user creation is handled through google sign-in" do

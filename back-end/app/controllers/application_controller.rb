@@ -51,18 +51,32 @@ class ApplicationController < ActionController::API
     current_user.present?
   end
 
+  def admin?
+    current_user&.admin?
+  end
+
   def require_login
     return if logged_in?
 
     render_unauthorized("Please sign in with Google.")
   end
 
+  def require_admin
+    return if admin?
+
+    render_forbidden("You're not authorized to view this page.")
+  end
+
   def render_unauthorized(message = "Unauthorized")
     render json: { error: message }, status: :unauthorized
   end
 
+  def render_forbidden(message = "Forbidden")
+    render json: { error: message }, status: :forbidden
+  end
+
   def user_payload(user, include_items: true)
-    payload = user.serializable_hash(only: %i[ id username preferred_style email avatar_url created_at updated_at ])
+    payload = user.serializable_hash(only: %i[ id username preferred_style email avatar_url admin created_at updated_at ])
 
     if include_items
       payload["clothing_items"] = user.clothing_items.order(:name).map do |item|
