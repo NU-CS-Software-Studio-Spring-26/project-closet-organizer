@@ -101,7 +101,7 @@ class ClothingItemsController < ApplicationController
     else
       clothing_item.photo.attach(uploaded_photo)
     end
-  rescue MiniMagick::Error, ImageProcessing::Error, ArgumentError => error
+  rescue ClothingItemPhotoCropper::Error, ArgumentError => error
     clothing_item.errors.add(:photo, "could not be cropped: #{error.message}")
   end
 
