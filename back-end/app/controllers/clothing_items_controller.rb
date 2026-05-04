@@ -71,9 +71,12 @@ class ClothingItemsController < ApplicationController
 
   def clothing_item_attributes
     base_params = params.require(:clothing_item).permit(:name, :size, :date, :user_id)
-    tag_params = params.require(:clothing_item).permit(:material, :season, :style, :brand, :color).to_h.compact_blank
+    tag_params = params.require(:clothing_item).permit(tags: [])[:tags]
 
-    base_params.merge(tags: tag_params, user_id: current_user.id)
+    base_params.merge(
+      tags: TagListNormalizer.call(tag_params.presence || params.dig(:clothing_item, :tags)),
+      user_id: current_user.id
+    )
   end
 
   def attach_photo_from_request(clothing_item, temporary_files)

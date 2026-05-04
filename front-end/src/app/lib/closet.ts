@@ -25,14 +25,6 @@ function defaultBackendBaseUrl() {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? defaultApiBaseUrl();
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL ?? defaultBackendBaseUrl();
 
-export interface ClothingItemTags {
-  material?: string;
-  season?: string;
-  style?: string;
-  brand?: string;
-  color?: string;
-}
-
 export interface UserSummary {
   id: number;
   username: string;
@@ -48,7 +40,7 @@ export interface ClothingItem {
   user_id: number;
   created_at?: string;
   updated_at?: string;
-  tags: ClothingItemTags;
+  tags: string[];
   image_url?: string | null;
   original_image_url?: string | null;
   cleaned_image_url?: string | null;
@@ -136,11 +128,7 @@ export interface ClothingItemFormValues {
   name: string;
   size: string;
   date: string;
-  material: string;
-  season: string;
-  style: string;
-  brand: string;
-  color: string;
+  tags: string;
 }
 
 export interface ClothingItemPhotoOptions {
@@ -210,11 +198,7 @@ export function emptyClothingItemFormValues(): ClothingItemFormValues {
     name: "",
     size: "medium",
     date: "",
-    material: "",
-    season: "",
-    style: "",
-    brand: "",
-    color: "",
+    tags: "",
   };
 }
 
@@ -236,6 +220,25 @@ export function formatPossessive(name: string) {
 
 export function formatPreferredStyle(style?: string | null) {
   return style ? titleize(style) : null;
+}
+
+export function parseTagInput(value: string) {
+  return Array.from(
+    new Set(
+      value
+        .split(/[,\n]/)
+        .map((tag) => tag.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  );
+}
+
+export function formatTagInput(tags: string[]) {
+  return tags.join(", ");
+}
+
+export function formatTagLabel(tag: string) {
+  return titleize(tag);
 }
 
 export function formatDisplaySize(size: string) {
@@ -265,11 +268,7 @@ export function toClothingItemFormValues(item: ClothingItem): ClothingItemFormVa
     name: item.name,
     size: item.size,
     date: toDateInputValue(item.date),
-    material: item.tags.material ?? "",
-    season: item.tags.season ?? "",
-    style: item.tags.style ?? "",
-    brand: item.tags.brand ?? "",
-    color: item.tags.color ?? "",
+    tags: formatTagInput(item.tags),
   };
 }
 
@@ -280,11 +279,11 @@ export function toClothingItemFormValuesFromDetection(
     name: detection.suggested_name?.trim() || titleize(detection.category),
     size: "medium",
     date: "",
-    material: detection.details.material_guess?.trim() ?? "",
-    season: "",
-    style: detection.details.style_guess?.trim() ?? "",
-    brand: "",
-    color: detection.details.dominant_color?.trim() ?? "",
+    tags: formatTagInput([
+      detection.details.dominant_color?.trim() ?? "",
+      detection.details.material_guess?.trim() ?? "",
+      detection.details.style_guess?.trim() ?? "",
+    ]),
   };
 }
 
@@ -310,7 +309,7 @@ export async function fetchCurrentUser(signal?: AbortSignal) {
     throw new Error(`Request failed with status ${response.status}`);
   }
 
-  return (await response.json()) as User;
+  return normalizeUserPayload((await response.json()) as User);
 }
 
 export function beginGoogleSignIn() {
@@ -335,7 +334,7 @@ export async function fetchUsers(signal?: AbortSignal) {
     throw await buildApiError(response);
   }
 
-  return (await response.json()) as User[];
+  return ((await response.json()) as User[]).map(normalizeUserPayload);
 }
 
 export async function fetchUser(id: number, signal?: AbortSignal) {
@@ -345,7 +344,7 @@ export async function fetchUser(id: number, signal?: AbortSignal) {
     throw await buildApiError(response);
   }
 
-  return (await response.json()) as User;
+  return normalizeUserPayload((await response.json()) as User);
 }
 
 export async function fetchClothingItem(id: number, signal?: AbortSignal) {
@@ -355,7 +354,7 @@ export async function fetchClothingItem(id: number, signal?: AbortSignal) {
     throw new Error(`Request failed with status ${response.status}`);
   }
 
-  return (await response.json()) as ClothingItem;
+  return normalizeClothingItemPayload((await response.json()) as ClothingItem);
 }
 
 export async function saveClothingItem(
@@ -377,7 +376,7 @@ export async function saveClothingItem(
     throw await buildApiError(response);
   }
 
-  return (await response.json()) as ClothingItem;
+  return normalizeClothingItemPayload((await response.json()) as ClothingItem);
 }
 
 export async function createClothingItem(
@@ -398,7 +397,7 @@ export async function createClothingItem(
     throw await buildApiError(response);
   }
 
-  return (await response.json()) as ClothingItem;
+  return normalizeClothingItemPayload((await response.json()) as ClothingItem);
 }
 
 export async function createOutfitUpload(
@@ -625,6 +624,36 @@ async function buildApiError(response: Response) {
   }
 }
 
+function normalizeTagList(rawTags: unknown): string[] {
+  if (Array.isArray(rawTags)) {
+    return parseTagInput(rawTags.join(","));
+  }
+
+  if (rawTags && typeof rawTags === "object") {
+    return parseTagInput(Object.values(rawTags as Record<string, unknown>).join(","));
+  }
+
+  if (typeof rawTags === "string") {
+    return parseTagInput(rawTags);
+  }
+
+  return [];
+}
+
+function normalizeClothingItemPayload(item: ClothingItem): ClothingItem {
+  return {
+    ...item,
+    tags: normalizeTagList((item as ClothingItem & { tags?: unknown }).tags),
+  };
+}
+
+function normalizeUserPayload(user: User): User {
+  return {
+    ...user,
+    clothing_items: (user.clothing_items ?? []).map(normalizeClothingItemPayload),
+  };
+}
+
 function buildClothingItemFormData(
   userId: number,
   values: ClothingItemFormValues,
@@ -636,11 +665,9 @@ function buildClothingItemFormData(
   formData.append("clothing_item[user_id]", String(userId));
   formData.append("clothing_item[size]", values.size);
   formData.append("clothing_item[date]", values.date);
-  formData.append("clothing_item[material]", values.material);
-  formData.append("clothing_item[season]", values.season);
-  formData.append("clothing_item[style]", values.style);
-  formData.append("clothing_item[brand]", values.brand);
-  formData.append("clothing_item[color]", values.color);
+  parseTagInput(values.tags).forEach((tag) => {
+    formData.append("clothing_item[tags][]", tag);
+  });
 
   if (photoOptions.photo) {
     formData.append("clothing_item[photo]", photoOptions.photo);

@@ -43,15 +43,17 @@ class ImageCleanPromptBuilder
   end
 
   def build_for_clothing_item(clothing_item)
-    color = clothing_item.tags["color"].presence
-    material = clothing_item.tags["material"].presence
-    style = clothing_item.tags["style"].presence
+    tags = TagListNormalizer.call(clothing_item.tags)
+    color = named_tag_value(clothing_item.tags, "color")
+    material = named_tag_value(clothing_item.tags, "material")
+    style = named_tag_value(clothing_item.tags, "style")
     name = clothing_item.name.presence
     appearance_summary = clothing_item_appearance_summary(
       name: name,
       color: color,
       material: material,
-      style: style
+      style: style,
+      tags: tags
     )
 
     {
@@ -64,7 +66,7 @@ class ImageCleanPromptBuilder
         color: color,
         name: name
       ),
-      soft_hints: build_soft_hints(material: material, style: style)
+      soft_hints: build_soft_hints(material: material, style: style, tags: tags)
     }.compact_blank
   end
 
@@ -89,7 +91,7 @@ class ImageCleanPromptBuilder
     summary.compact_blank.join(" ").presence
   end
 
-  def clothing_item_appearance_summary(name:, color:, material:, style:)
+  def clothing_item_appearance_summary(name:, color:, material:, style:, tags:)
     summary = []
     summary << "Reference item: #{name}." if name.present?
 
@@ -100,6 +102,8 @@ class ImageCleanPromptBuilder
       summary << sentence
     elsif style.present?
       summary << "The item should keep a #{style} style."
+    elsif tags.present?
+      summary << "Reference tags: #{tags.join(', ')}."
     end
 
     summary.compact_blank.join(" ").presence
@@ -123,10 +127,19 @@ class ImageCleanPromptBuilder
     constraints
   end
 
-  def build_soft_hints(material:, style:)
+  def build_soft_hints(material:, style:, tags: [])
     hints = []
     hints << "Material cues should stay consistent with #{material}." if material.present?
     hints << "The styling should still read as #{style}." if style.present?
+    if material.blank? && style.blank? && tags.present?
+      hints << "Keep the item consistent with these tags: #{tags.join(', ')}."
+    end
     hints
+  end
+
+  def named_tag_value(tags, key)
+    return unless tags.is_a?(Hash)
+
+    tags[key].presence || tags[key.to_sym].presence
   end
 end

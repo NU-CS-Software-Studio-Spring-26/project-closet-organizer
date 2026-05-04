@@ -4,6 +4,7 @@ class ClothingItem < ApplicationRecord
   has_many :outfits, through: :outfit_items
   has_one_attached :photo
   has_one_attached :cleaned_photo
+  before_validation :normalize_tags
 
   enum :size, {
     xs: 0,
@@ -46,5 +47,9 @@ class ClothingItem < ApplicationRecord
     return if photo.blob.byte_size <= 10.megabytes
 
     errors.add(:photo, "must be 10 MB or smaller")
+  end
+
+  def normalize_tags
+    self.tags = TagListNormalizer.call(tags)
   end
 end

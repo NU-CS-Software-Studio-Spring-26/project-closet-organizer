@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.0.4 - 2026-05-04
+
+- Merged the tag-based closet search and relaxed item schema work with the new outfits and lookbook experience from `main`.
+- Preserved the polished closet filter bar updates alongside the My Outfits page, outfit draft persistence, and outfits CRUD support.
+- Synced the branch to the current Milestone 1 codebase and tagged the combined release head.
+
+## v1.0.3 - 2026-05-04
+
+- Reworked clothing item metadata into a relaxed tag-based schema for create, edit, seed, and API payload flows.
+- Added closet search, tag filtering, and sort controls aligned with the new tag-driven item model.
+- Polished the closet filter bar layout so the search field and dropdown controls feel cleaner and more consistent.
+
 ## v1.0.2 - 2026-05-03
 
 - Fixed deployed routing so browser visits to `/users` and `/users/:id` render the frontend app instead of raw JSON responses.

@@ -15,4 +15,21 @@ class ClothingItemTest < ActiveSupport::TestCase
   test "belongs to a user" do
     assert_equal users(:one), clothing_items(:one).user
   end
+
+  test "normalizes tags into a clean list" do
+    item = ClothingItem.new(
+      user: users(:one),
+      name: "Weekend Blazer",
+      size: :medium,
+      tags: {
+        brand: "  COS ",
+        vibe: "Workwear",
+        duplicate: "cos"
+      }
+    )
+
+    item.valid?
+
+    assert_equal [ "cos", "workwear" ], item.tags
+  end
 end
