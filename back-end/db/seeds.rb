@@ -5,54 +5,46 @@ srand(20260425)
 ClothingItem.destroy_all
 User.destroy_all
 
-SEASON_MONTHS = {
-  spring: [ 3, 4, 5 ],
-  summer: [ 6, 7, 8 ],
-  fall: [ 9, 10, 11 ],
-  winter: [ 12, 1, 2 ],
-  all_season: (1..12).to_a
-}.freeze
-
 WARDROBE_LIBRARY = {
   smart_casual: [
-    [ "Oxford Shirt", "J.Crew", "cotton", "spring", "blue" ],
-    [ "Merino Crewneck Sweater", "Uniqlo", "merino_wool", "winter", "charcoal" ],
-    [ "Straight-Leg Jeans", "Madewell", "denim", "all_season", "indigo" ],
-    [ "Tailored Chinos", "Banana Republic", "twill", "fall", "khaki" ],
-    [ "Leather Loafers", "Sam Edelman", "leather", "all_season", "black" ],
-    [ "Single-Breasted Blazer", "Theory", "wool_blend", "fall", "navy" ]
+    [ "Oxford Shirt", [ "j.crew", "cotton", "blue", "office", "layering" ] ],
+    [ "Merino Crewneck Sweater", [ "uniqlo", "merino wool", "charcoal", "cozy", "polished" ] ],
+    [ "Straight-Leg Jeans", [ "madewell", "denim", "indigo", "everyday", "classic" ] ],
+    [ "Tailored Chinos", [ "banana republic", "twill", "khaki", "workwear", "tailored" ] ],
+    [ "Leather Loafers", [ "sam edelman", "leather", "black", "dressy", "classic" ] ],
+    [ "Single-Breasted Blazer", [ "theory", "wool blend", "navy", "office", "sharp" ] ]
   ],
   athleisure: [
-    [ "Training Joggers", "Lululemon", "recycled_polyester", "all_season", "black" ],
-    [ "Performance Tee", "Nike", "moisture_wicking_jersey", "summer", "heather_gray" ],
-    [ "Running Hoodie", "Under Armour", "performance_fleece", "winter", "gray" ],
-    [ "Quarter-Zip Pullover", "Vuori", "polyester", "fall", "navy" ],
-    [ "Hybrid Shorts", "Ten Thousand", "nylon", "summer", "stone" ],
-    [ "Trail Shell Jacket", "Patagonia", "ripstop", "spring", "olive" ]
+    [ "Training Joggers", [ "lululemon", "recycled polyester", "black", "active", "weekend" ] ],
+    [ "Performance Tee", [ "nike", "moisture wicking", "heather gray", "gym", "breathable" ] ],
+    [ "Running Hoodie", [ "under armour", "performance fleece", "gray", "cozy", "active" ] ],
+    [ "Quarter-Zip Pullover", [ "vuori", "polyester", "navy", "layering", "commute" ] ],
+    [ "Hybrid Shorts", [ "ten thousand", "nylon", "stone", "summer", "training" ] ],
+    [ "Trail Shell Jacket", [ "patagonia", "ripstop", "olive", "outdoors", "weatherproof" ] ]
   ],
   minimal: [
-    [ "Rib Tank", "Uniqlo", "cotton", "summer", "black" ],
-    [ "Relaxed Trousers", "COS", "twill", "all_season", "taupe" ],
-    [ "Linen Button-Down", "Everlane", "linen", "spring", "white" ],
-    [ "Slip Skirt", "Aritzia", "satin", "summer", "cream" ],
-    [ "Wool Coat", "Mango", "wool", "winter", "camel" ],
-    [ "Ankle Boots", "Steve Madden", "suede", "fall", "brown" ]
+    [ "Rib Tank", [ "uniqlo", "cotton", "black", "minimal", "basics" ] ],
+    [ "Relaxed Trousers", [ "cos", "twill", "taupe", "workwear", "clean lines" ] ],
+    [ "Linen Button-Down", [ "everlane", "linen", "white", "airy", "capsule" ] ],
+    [ "Slip Skirt", [ "aritzia", "satin", "cream", "soft", "date night" ] ],
+    [ "Wool Coat", [ "mango", "wool", "camel", "outerwear", "elevated" ] ],
+    [ "Ankle Boots", [ "steve madden", "suede", "brown", "fall", "classic" ] ]
   ],
   vintage: [
-    [ "Band Tee", "Levis", "cotton", "all_season", "washed_black" ],
-    [ "High-Rise Mom Jeans", "Levis", "denim", "all_season", "light_blue" ],
-    [ "Corduroy Jacket", "Free People", "corduroy", "fall", "rust" ],
-    [ "Pleated Midi Dress", "Reformation", "viscose", "summer", "sage" ],
-    [ "Western Boots", "Frye", "leather", "fall", "cognac" ],
-    [ "Wool Beret", "Anthropologie", "wool", "winter", "burgundy" ]
+    [ "Band Tee", [ "levis", "cotton", "washed black", "graphic", "casual" ] ],
+    [ "High-Rise Mom Jeans", [ "levis", "denim", "light blue", "retro", "weekend" ] ],
+    [ "Corduroy Jacket", [ "free people", "corduroy", "rust", "textured", "layering" ] ],
+    [ "Pleated Midi Dress", [ "reformation", "viscose", "sage", "dressy", "romantic" ] ],
+    [ "Western Boots", [ "frye", "leather", "cognac", "statement", "boots" ] ],
+    [ "Wool Beret", [ "anthropologie", "wool", "burgundy", "accessory", "playful" ] ]
   ],
   polished: [
-    [ "Silk Blouse", "Sezane", "silk", "spring", "ivory" ],
-    [ "Pleated Trousers", "Aritzia", "crepe", "all_season", "black" ],
-    [ "Cashmere Cardigan", "Naadam", "cashmere", "winter", "oatmeal" ],
-    [ "Pencil Skirt", "Theory", "wool_blend", "fall", "charcoal" ],
-    [ "Block Heel Pumps", "Cole Haan", "leather", "all_season", "black" ],
-    [ "Trench Coat", "Everlane", "cotton_blend", "spring", "sand" ]
+    [ "Silk Blouse", [ "sezane", "silk", "ivory", "polished", "workwear" ] ],
+    [ "Pleated Trousers", [ "aritzia", "crepe", "black", "tailored", "office" ] ],
+    [ "Cashmere Cardigan", [ "naadam", "cashmere", "oatmeal", "soft", "luxury" ] ],
+    [ "Pencil Skirt", [ "theory", "wool blend", "charcoal", "office", "classic" ] ],
+    [ "Block Heel Pumps", [ "cole haan", "leather", "black", "dressy", "heels" ] ],
+    [ "Trench Coat", [ "everlane", "cotton blend", "sand", "outerwear", "timeless" ] ]
   ]
 }.freeze
 
@@ -86,7 +78,6 @@ seed_users = [
     password: "password",
     admin: true,
     preferred_style: "polished",
-    size_profile: :standard,
     item_count: 0
   },
   {
@@ -97,14 +88,14 @@ seed_users = [
     password: "password",
     preferred_style: "athleisure",
     items: [
-      { name: "Heather Gray Running Hoodie", size: :large, date: Date.new(2026, 2, 2), material: "performance_fleece", season: "winter", style: "athleisure", brand: "Nike", color: "gray" },
-      { name: "Black Training Joggers", size: :large, date: Date.new(2026, 1, 24), material: "recycled_polyester", season: "winter", style: "athleisure", brand: "Lululemon", color: "black" },
-      { name: "Forest Performance Tee", size: :medium, date: Date.new(2026, 3, 22), material: "moisture_wicking_jersey", season: "spring", style: "sport", brand: "Under Armour", color: "green" },
-      { name: "Navy Quarter-Zip Pullover", size: :large, date: Date.new(2025, 11, 3), material: "polyester", season: "fall", style: "athleisure", brand: "Vuori", color: "navy" },
-      { name: "Stone Utility Shorts", size: :medium, date: Date.new(2025, 8, 19), material: "nylon", season: "summer", style: "casual", brand: "Ten Thousand", color: "stone" },
-      { name: "Trail Running Vest", size: :medium, date: Date.new(2025, 10, 7), material: "ripstop", season: "fall", style: "outdoor", brand: "Patagonia", color: "black" },
-      { name: "White Court Sneakers", size: :large, date: Date.new(2025, 7, 14), material: "leather", season: "summer", style: "sport", brand: "Adidas", color: "white" },
-      { name: "Slate Rain Shell Jacket", size: :large, date: Date.new(2026, 4, 12), material: "nylon", season: "spring", style: "outdoor", brand: "Arcteryx", color: "slate" }
+      { name: "Heather Gray Running Hoodie", size: :large, date: Date.new(2026, 2, 2), tags: [ "nike", "performance fleece", "gray", "active", "hoodie" ] },
+      { name: "Black Training Joggers", size: :large, date: Date.new(2026, 1, 24), tags: [ "lululemon", "recycled polyester", "black", "active", "joggers" ] },
+      { name: "Forest Performance Tee", size: :medium, date: Date.new(2026, 3, 22), tags: [ "under armour", "moisture wicking", "green", "gym", "tee" ] },
+      { name: "Navy Quarter-Zip Pullover", size: :large, date: Date.new(2025, 11, 3), tags: [ "vuori", "polyester", "navy", "layering", "athleisure" ] },
+      { name: "Stone Utility Shorts", size: :medium, date: Date.new(2025, 8, 19), tags: [ "ten thousand", "nylon", "stone", "summer", "training" ] },
+      { name: "Trail Running Vest", size: :medium, date: Date.new(2025, 10, 7), tags: [ "patagonia", "ripstop", "black", "outdoors", "running" ] },
+      { name: "White Court Sneakers", size: :large, date: Date.new(2025, 7, 14), tags: [ "adidas", "leather", "white", "sport", "sneakers" ] },
+      { name: "Slate Rain Shell Jacket", size: :large, date: Date.new(2026, 4, 12), tags: [ "arcteryx", "nylon", "slate", "outerwear", "rainy day" ] }
     ]
   },
   {
@@ -115,24 +106,20 @@ seed_users = [
     password: "password",
     preferred_style: "minimal",
     items: [
-      { name: "Oat Linen Blazer", size: :small, date: Date.new(2026, 3, 18), material: "linen", season: "spring", style: "minimal", brand: "Mango", color: "oat" },
-      { name: "Black Rib Tank", size: :xs, date: Date.new(2026, 4, 4), material: "cotton", season: "spring", style: "minimal", brand: "Uniqlo", color: "black" },
-      { name: "Cream Slip Skirt", size: :small, date: Date.new(2025, 6, 9), material: "satin", season: "summer", style: "dressy", brand: "Zara", color: "cream" },
-      { name: "Charcoal Merino Sweater", size: :small, date: Date.new(2025, 12, 11), material: "merino_wool", season: "winter", style: "minimal", brand: "COS", color: "charcoal" },
-      { name: "Brown Ankle Boots", size: :small, date: Date.new(2025, 10, 1), material: "suede", season: "fall", style: "classic", brand: "Steve Madden", color: "brown" },
-      { name: "Light Wash Denim Jacket", size: :medium, date: Date.new(2025, 9, 21), material: "denim", season: "fall", style: "casual", brand: "Levis", color: "light_blue" },
-      { name: "Soft White T-Shirt", size: :small, date: Date.new(2026, 2, 27), material: "cotton", season: "all_season", style: "minimal", brand: "Everlane", color: "white" },
-      { name: "Sand Pleated Trousers", size: :small, date: Date.new(2025, 11, 29), material: "twill", season: "winter", style: "workwear", brand: "Aritzia", color: "sand" }
+      { name: "Oat Linen Blazer", size: :small, date: Date.new(2026, 3, 18), tags: [ "mango", "linen", "oat", "blazer", "capsule" ] },
+      { name: "Black Rib Tank", size: :xs, date: Date.new(2026, 4, 4), tags: [ "uniqlo", "cotton", "black", "minimal", "tank" ] },
+      { name: "Cream Slip Skirt", size: :small, date: Date.new(2025, 6, 9), tags: [ "zara", "satin", "cream", "dressy", "soft" ] },
+      { name: "Charcoal Merino Sweater", size: :small, date: Date.new(2025, 12, 11), tags: [ "cos", "merino wool", "charcoal", "cozy", "sweater" ] },
+      { name: "Brown Ankle Boots", size: :small, date: Date.new(2025, 10, 1), tags: [ "steve madden", "suede", "brown", "boots", "classic" ] },
+      { name: "Light Wash Denim Jacket", size: :medium, date: Date.new(2025, 9, 21), tags: [ "levis", "denim", "light blue", "layering", "weekend" ] },
+      { name: "Soft White T-Shirt", size: :small, date: Date.new(2026, 2, 27), tags: [ "everlane", "cotton", "white", "basics", "everyday" ] },
+      { name: "Sand Pleated Trousers", size: :small, date: Date.new(2025, 11, 29), tags: [ "aritzia", "twill", "sand", "tailored", "office" ] }
     ]
   }
 ]
 
-def random_purchase_date(season_name)
-  season_key = season_name.to_sym
-  month = SEASON_MONTHS.fetch(season_key).sample
-  year = month > Date.today.month ? Date.today.year - 1 : Date.today.year
-  day = rand(1..27)
-  Date.new(year, month, day)
+def random_purchase_date
+  Date.today - rand(20..540)
 end
 
 def build_item_name(base_name)
@@ -159,7 +146,7 @@ seed_users.each do |user_data|
         size: item_data[:size],
         date: item_data[:date],
         user: user,
-        tags: item_data.slice(:material, :season, :style, :brand, :color)
+        tags: item_data[:tags]
       )
       created_items_count += 1
     end
@@ -170,20 +157,14 @@ seed_users.each do |user_data|
   size_pool = SIZE_PROFILES.fetch(user_data.fetch(:size_profile, :standard))
 
   user_data.fetch(:item_count, 0).times do
-    base_name, brand, material, season, color = style_pool.sample
+    base_name, base_tags = style_pool.sample
 
     ClothingItem.create!(
       name: build_item_name(base_name),
       size: size_pool.sample,
-      date: random_purchase_date(season),
+      date: random_purchase_date,
       user: user,
-      tags: {
-        material: material,
-        season: season,
-        style: user.preferred_style,
-        brand: brand,
-        color: color
-      }
+      tags: base_tags + [ user.preferred_style.to_s.tr("_", " ") ]
     )
     created_items_count += 1
   end

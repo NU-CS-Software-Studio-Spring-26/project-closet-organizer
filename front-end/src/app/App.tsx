@@ -1,12 +1,20 @@
-import { useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, ArrowRight, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, Search, Users } from "lucide-react";
 import { AddItemMenu } from "./components/AddItemMenu";
 import { ClothingCard } from "./components/ClothingCard";
 import { CreateItemPage } from "./components/CreateItemPage";
 import { ItemDetailPage } from "./components/ItemDetailPage";
 import { UserDetailPage } from "./components/UserDetailPage";
 import { UsersDirectoryPage } from "./components/UsersDirectoryPage";
+import { Input } from "./components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./components/ui/select";
 import {
   beginGoogleSignIn,
   ClothingItem,
@@ -141,12 +149,59 @@ function removeUserItem(user: User | null, itemId: number) {
   };
 }
 
+type ClosetSortOption = "name-asc" | "newest-added" | "oldest-added" | "recent-purchase";
+
+function matchesSearchQuery(item: ClothingItem, query: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  const haystack = [
+    item.name,
+    item.size,
+    ...item.tags,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return normalizedQuery
+    .split(/\s+/)
+    .every((term) => haystack.includes(term));
+}
+
+function sortClothingItems(items: ClothingItem[], sortOption: ClosetSortOption) {
+  const sorted = [...items];
+
+  sorted.sort((left, right) => {
+    if (sortOption === "name-asc") {
+      return left.name.localeCompare(right.name);
+    }
+
+    if (sortOption === "oldest-added") {
+      return (new Date(left.created_at ?? 0).getTime()) - (new Date(right.created_at ?? 0).getTime());
+    }
+
+    if (sortOption === "recent-purchase") {
+      return (new Date(right.date ?? 0).getTime()) - (new Date(left.date ?? 0).getTime());
+    }
+
+    return (new Date(right.created_at ?? 0).getTime()) - (new Date(left.created_at ?? 0).getTime());
+  });
+
+  return sorted;
+}
+
 export default function App() {
   const [route, setRoute] = useState<AppRoute>(() => getRouteFromLocation());
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [homeMessage, setHomeMessage] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTag, setSelectedTag] = useState("all");
+  const [sortOption, setSortOption] = useState<ClosetSortOption>("name-asc");
 
   useEffect(() => {
     const handlePopState = () => setRoute(getRouteFromLocation());
@@ -197,6 +252,7 @@ export default function App() {
   }, [route.kind]);
 
   const clothingItems = user?.clothing_items ?? [];
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const isLoggedOutProtectedRoute = isProtectedRoute(route) && !user;
 
   const closetTitle = user ? formatPossessive(titleize(user.username)) : "Your Closet";
@@ -208,6 +264,21 @@ export default function App() {
 
   const isAdminRoute = route.kind === "users" || route.kind === "user";
   const isUnauthorizedAdminRoute = Boolean(user && !user.admin && isAdminRoute);
+  const tagOptions = Array.from(new Set(clothingItems.flatMap((item) => item.tags))).sort((left, right) =>
+    left.localeCompare(right),
+  );
+  const filteredClothingItems = sortClothingItems(
+    clothingItems.filter((item) => {
+      if (selectedTag !== "all" && !item.tags.includes(selectedTag)) {
+        return false;
+      }
+
+      return matchesSearchQuery(item, deferredSearchQuery);
+    }),
+    sortOption,
+  );
+  const hasActiveClosetControls =
+    searchQuery.trim().length > 0 || selectedTag !== "all" || sortOption !== "name-asc";
 
   const globalAction = user ? (
     <button
@@ -476,16 +547,89 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="mb-8 flex items-center justify-between"
+              className="mb-8 space-y-5"
             >
-              <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
-                Showing {clothingItems.length} {clothingItems.length === 1 ? "item" : "items"}
-              </p>
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
+                    Showing {filteredClothingItems.length} of {clothingItems.length}{" "}
+                    {clothingItems.length === 1 ? "item" : "items"}
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 lg:min-w-[46rem] lg:flex-row">
+                  <div className="relative flex-1">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      placeholder="Search by name or describe an item with tags"
+                      className="pl-9"
+                    />
+                  </div>
+
+                  <div className="w-full lg:w-[14rem]">
+                    <Select value={selectedTag} onValueChange={setSelectedTag}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="All tags" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All tags</SelectItem>
+                        {tagOptions.map((tag) => (
+                          <SelectItem key={tag} value={tag}>
+                            {titleize(tag)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {tagOptions.length > 0 ? (
+                      <p
+                        className="mt-2 text-xs leading-5 text-muted-foreground"
+                        style={{ fontFamily: "Outfit, sans-serif" }}
+                      >
+                        Available tags: {tagOptions.map(titleize).join(", ")}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <Select value={sortOption} onValueChange={(value) => setSortOption(value as ClosetSortOption)}>
+                    <SelectTrigger className="w-full lg:w-[12rem]">
+                      <SelectValue placeholder="Sort items" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="name-asc">Name A-Z</SelectItem>
+                      <SelectItem value="newest-added">Newest added</SelectItem>
+                      <SelectItem value="oldest-added">Oldest added</SelectItem>
+                      <SelectItem value="recent-purchase">Most recent purchase</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {hasActiveClosetControls ? (
+                <div className="flex items-center justify-between gap-4 border border-border bg-card px-4 py-3">
+                  <p className="text-sm text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
+                    Refine your closet with free-text search, tag filters, and sorting.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSelectedTag("all");
+                      setSortOption("name-asc");
+                    }}
+                    className="inline-flex items-center justify-center border border-border px-3 py-2 text-sm transition-colors hover:border-foreground"
+                    style={{ fontFamily: "Outfit, sans-serif" }}
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              ) : null}
+
             </motion.div>
 
-            {user && clothingItems.length > 0 ? (
+            {user && filteredClothingItems.length > 0 ? (
               <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
-                {clothingItems.map((item, index) => (
+                {filteredClothingItems.map((item, index) => (
                   <ClothingCard
                     key={item.id}
                     {...item}
@@ -497,11 +641,13 @@ export default function App() {
             ) : (
               <div className="border border-dashed border-border p-10 text-center">
                 <p className="mb-3 text-2xl" style={{ fontFamily: "Cormorant Garamond, serif" }}>
-                  {user ? "No matching items yet" : "No closet data found"}
+                  {user ? "No matching items found" : "No closet data found"}
                 </p>
                 <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
                   {user
-                    ? "Add a new item to start building out this closet."
+                    ? hasActiveClosetControls
+                      ? "Try a different tag, search phrase, or sort."
+                      : "Add a new item to start building out this closet."
                     : "Sign in with Google to load your closet."}
                 </p>
               </div>

@@ -2,6 +2,7 @@ import { motion } from "motion/react";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import {
+  formatTagLabel,
   formatDisplaySize,
 } from "../lib/closet";
 
@@ -9,13 +10,7 @@ interface ClothingCardProps {
   id: number;
   name: string;
   size: string;
-  tags: {
-    material?: string;
-    season?: string;
-    style?: string;
-    brand?: string;
-    color?: string;
-  };
+  tags: string[];
   image_url?: string | null;
   index: number;
   onSelect?: (id: number) => void;
@@ -31,7 +26,8 @@ export function ClothingCard({
   onSelect,
 }: ClothingCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const itemMetadata = [tags.material, tags.season, tags.style].filter(Boolean).join(" · ");
+  const visibleTags = tags.slice(0, 3);
+  const itemMetadata = visibleTags.map(formatTagLabel).join(" · ");
   const handleSelect = () => onSelect?.(id);
 
   return (
@@ -70,12 +66,12 @@ export function ClothingCard({
             }}
           >
             <div className="space-y-2">
-              {tags.color && (
+              {tags[0] && (
                 <p
                   className="uppercase tracking-[0.25em] text-xs"
                   style={{ fontFamily: "Outfit, sans-serif" }}
                 >
-                  {tags.color}
+                  {formatTagLabel(tags[0])}
                 </p>
               )}
               {itemMetadata && (
@@ -139,16 +135,16 @@ export function ClothingCard({
       <div className="mt-3 space-y-1">
         <div className="flex items-center gap-2 text-muted-foreground" style={{ fontFamily: 'Outfit, sans-serif' }}>
           <span className="uppercase tracking-wider">{formatDisplaySize(size)}</span>
-          {tags.color && (
+          {tags[0] && (
             <>
               <span>·</span>
-              <span className="capitalize">{tags.color}</span>
+              <span>{formatTagLabel(tags[0])}</span>
             </>
           )}
         </div>
-        {tags.brand && (
+        {tags[1] && (
           <p className="italic opacity-60" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            {tags.brand}
+            {visibleTags.slice(1).map(formatTagLabel).join(" · ")}
           </p>
         )}
       </div>

@@ -6,10 +6,11 @@ import {
   ClothingItem,
   destroyClothingItem,
   fetchClothingItem,
+  formatTagLabel,
   formatDisplaySize,
   generateClothingItemCleanImage,
+  parseTagInput,
   saveClothingItem,
-  titleize,
   toClothingItemFormValues,
 } from "../lib/closet";
 import { AiCleanImageButton } from "./AiCleanImageButton";
@@ -95,6 +96,7 @@ export function ItemDetailPage({
   }, [formValues, item, photoState.removeExisting, photoState.selectedFile]);
 
   const previewName = formValues?.name.trim() || item?.name?.trim() || "Untitled Item";
+  const previewTags = formValues ? parseTagInput(formValues.tags).slice(0, 2) : [];
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -229,7 +231,7 @@ export function ItemDetailPage({
           imageUrl={photoState.imageUrl}
           label="Clothing Item"
           primaryDetail={formatDisplaySize(formValues.size)}
-          secondaryDetail={formValues.style ? `${titleize(formValues.style)} style` : null}
+          secondaryDetail={previewTags.length > 0 ? previewTags.map(formatTagLabel).join(" · ") : null}
           title={previewName}
         />
 

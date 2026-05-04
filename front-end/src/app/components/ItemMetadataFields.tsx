@@ -1,7 +1,6 @@
 import {
   ClothingItemFormValues,
   formatDisplaySize,
-  titleize,
 } from "../lib/closet";
 
 interface ItemMetadataFieldsProps {
@@ -10,10 +9,6 @@ interface ItemMetadataFieldsProps {
 }
 
 const sizeOptions = ["xs", "small", "medium", "large", "xl"];
-const tagFields: Array<keyof Pick<
-  ClothingItemFormValues,
-  "brand" | "color" | "material" | "season" | "style"
->> = ["brand", "color", "material", "season", "style"];
 
 export function ItemMetadataFields({ onChange, values }: ItemMetadataFieldsProps) {
   function updateField<K extends keyof ClothingItemFormValues>(
@@ -54,7 +49,7 @@ export function ItemMetadataFields({ onChange, values }: ItemMetadataFieldsProps
       </label>
 
       <label className="space-y-2">
-        <span>Date</span>
+        <span>Purchase Date</span>
         <input
           type="date"
           value={values.date}
@@ -63,16 +58,18 @@ export function ItemMetadataFields({ onChange, values }: ItemMetadataFieldsProps
         />
       </label>
 
-      {tagFields.map((fieldName) => (
-        <label key={fieldName} className="space-y-2">
-          <span>{titleize(fieldName)}</span>
-          <input
-            value={values[fieldName]}
-            onChange={(event) => updateField(fieldName, event.target.value)}
-            className="w-full border border-border bg-card px-4 py-3"
-          />
-        </label>
-      ))}
+      <label className="space-y-2 sm:col-span-2">
+        <span>Tags</span>
+        <textarea
+          value={values.tags}
+          onChange={(event) => updateField("tags", event.target.value)}
+          className="min-h-28 w-full border border-border bg-card px-4 py-3"
+          placeholder="Try tags like cotton, blue, weekend, office"
+        />
+        <p className="text-sm text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
+          Add comma-separated tags so people can search and filter this item naturally.
+        </p>
+      </label>
     </>
   );
 }

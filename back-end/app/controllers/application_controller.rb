@@ -105,6 +105,7 @@ class ApplicationController < ActionController::API
       ]
     )
     payload["size"] = clothing_item.size
+    payload["tags"] = TagListNormalizer.call(clothing_item.tags)
     payload["image_url"] = clothing_item.display_photo_attachment.attached? ? url_for(clothing_item.display_photo_attachment) : nil
     payload["original_image_url"] = clothing_item.photo.attached? ? url_for(clothing_item.photo) : nil
     payload["cleaned_image_url"] = clothing_item.cleaned_photo.attached? ? url_for(clothing_item.cleaned_photo) : nil
