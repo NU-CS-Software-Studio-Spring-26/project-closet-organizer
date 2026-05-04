@@ -549,61 +549,44 @@ export default function App() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="mb-8 space-y-5"
             >
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                  <p className="text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
-                    Showing {filteredClothingItems.length} of {clothingItems.length}{" "}
-                    {clothingItems.length === 1 ? "item" : "items"}
-                  </p>
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1.9fr)_minmax(14rem,1fr)_12rem] lg:items-start">
+                <div className="relative min-w-0 self-start">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="Search by name or describe an item with tags"
+                    className="h-14 pl-10"
+                  />
                 </div>
 
-                <div className="flex flex-col gap-3 lg:min-w-[46rem] lg:flex-row">
-                  <div className="relative flex-1">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      value={searchQuery}
-                      onChange={(event) => setSearchQuery(event.target.value)}
-                      placeholder="Search by name or describe an item with tags"
-                      className="pl-9"
-                    />
-                  </div>
-
-                  <div className="w-full lg:w-[14rem]">
-                    <Select value={selectedTag} onValueChange={setSelectedTag}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="All tags" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All tags</SelectItem>
-                        {tagOptions.map((tag) => (
-                          <SelectItem key={tag} value={tag}>
-                            {titleize(tag)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {tagOptions.length > 0 ? (
-                      <p
-                        className="mt-2 text-xs leading-5 text-muted-foreground"
-                        style={{ fontFamily: "Outfit, sans-serif" }}
-                      >
-                        Available tags: {tagOptions.map(titleize).join(", ")}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <Select value={sortOption} onValueChange={(value) => setSortOption(value as ClosetSortOption)}>
-                    <SelectTrigger className="w-full lg:w-[12rem]">
-                      <SelectValue placeholder="Sort items" />
+                <div className="min-w-0">
+                  <Select value={selectedTag} onValueChange={setSelectedTag}>
+                    <SelectTrigger className="h-14 w-full bg-stone-200 hover:bg-stone-200">
+                      <SelectValue placeholder="All tags" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="name-asc">Name A-Z</SelectItem>
-                      <SelectItem value="newest-added">Newest added</SelectItem>
-                      <SelectItem value="oldest-added">Oldest added</SelectItem>
-                      <SelectItem value="recent-purchase">Most recent purchase</SelectItem>
+                      <SelectItem value="all">All tags</SelectItem>
+                      {tagOptions.map((tag) => (
+                        <SelectItem key={tag} value={tag}>
+                          {titleize(tag)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
+
+                <Select value={sortOption} onValueChange={(value) => setSortOption(value as ClosetSortOption)}>
+                  <SelectTrigger className="h-14 w-full bg-stone-200 hover:bg-stone-200">
+                    <SelectValue placeholder="Sort items" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name-asc">Name A-Z</SelectItem>
+                    <SelectItem value="newest-added">Newest added</SelectItem>
+                    <SelectItem value="oldest-added">Oldest added</SelectItem>
+                    <SelectItem value="recent-purchase">Most recent purchase</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {hasActiveClosetControls ? (

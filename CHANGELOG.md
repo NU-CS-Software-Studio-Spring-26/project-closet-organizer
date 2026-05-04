@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.3 - 2026-05-04
+
+- Reworked clothing item metadata into a relaxed tag-based schema for create, edit, seed, and API payload flows.
+- Added closet search, tag filtering, and sort controls aligned with the new tag-driven item model.
+- Polished the closet filter bar layout so the search field and dropdown controls feel cleaner and more consistent.
+
 ## v1.0.1 - 2026-05-03
 
 - Refined unauthorized user flows for admin-only pages and protected routes.
