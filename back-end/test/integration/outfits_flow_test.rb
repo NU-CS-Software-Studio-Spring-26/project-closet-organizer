@@ -1,0 +1,86 @@
+require "test_helper"
+
+class OutfitsFlowTest < ActionDispatch::IntegrationTest
+  setup do
+    @user = users(:one)
+    @other_user = users(:two)
+    @outfit = outfits(:one)
+    @user_item = clothing_items(:one)
+    @other_user_item = clothing_items(:two)
+  end
+
+  test "outfits index only returns current user outfits" do
+    get outfits_url, headers: auth_headers(@user), as: :json
+
+    assert_response :success
+    assert_equal [ @outfit.id ], response_json.map { |outfit| outfit["id"] }
+    assert_equal [ @user_item.id ], response_json.first["item_ids"]
+  end
+
+  test "outfit show loads for current user" do
+    get outfit_url(@outfit), headers: auth_headers(@user), as: :json
+
+    assert_response :success
+    assert_equal @outfit.name, response_json["name"]
+    assert_equal @user_item.id, response_json["items"].first["id"]
+  end
+
+  test "can create an outfit with owned items" do
+    assert_difference("Outfit.count", 1) do
+      post outfits_url, params: {
+        outfit: {
+          name: "Rainy Day Fit",
+          tags: [ "rain", "casual" ],
+          notes: "Layers and waterproof shoes.",
+          item_ids: [ @user_item.id ]
+        }
+      }, headers: auth_headers(@user), as: :json
+    end
+
+    assert_response :created
+
+    created_outfit = Outfit.order(:created_at).last
+    assert_equal @user.id, created_outfit.user_id
+    assert_equal [ @user_item.id ], created_outfit.clothing_item_ids
+    assert_equal [ "rain", "casual" ], response_json["tags"]
+  end
+
+  test "cannot create an outfit using another user's item" do
+    assert_no_difference("Outfit.count") do
+      post outfits_url, params: {
+        outfit: {
+          name: "Forbidden Fit",
+          item_ids: [ @other_user_item.id ]
+        }
+      }, headers: auth_headers(@user), as: :json
+    end
+
+    assert_response :unprocessable_content
+    assert_includes response_json["errors"], "Item ids contain items you do not own"
+  end
+
+  test "can update an outfit and replace item list" do
+    patch outfit_url(@outfit), params: {
+      outfit: {
+        name: "Weekend Capsule Updated",
+        notes: "Updated note",
+        item_ids: []
+      }
+    }, headers: auth_headers(@user), as: :json
+
+    assert_response :success
+
+    @outfit.reload
+    assert_equal "Weekend Capsule Updated", @outfit.name
+    assert_equal "Updated note", @outfit.notes
+    assert_empty @outfit.clothing_item_ids
+  end
+
+  test "can delete an outfit" do
+    assert_difference("Outfit.count", -1) do
+      delete outfit_url(@outfit), headers: auth_headers(@user), as: :json
+    end
+
+    assert_response :no_content
+  end
+end

@@ -20,6 +20,7 @@ Rails.application.routes.draw do
     resources :clothing_items, except: %i[new edit] do
       post :generate_clean_image, on: :member
     end
+    resources :outfits, except: %i[new edit]
     resources :outfit_uploads, only: %i[create show]
     resources :outfit_detections, only: [] do
       post :generate_clean_image, on: :member

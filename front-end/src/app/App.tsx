@@ -5,6 +5,7 @@ import { AddItemMenu } from "./components/AddItemMenu";
 import { ClothingCard } from "./components/ClothingCard";
 import { CreateItemPage } from "./components/CreateItemPage";
 import { ItemDetailPage } from "./components/ItemDetailPage";
+import { MyOutfitsPage } from "./components/MyOutfitsPage";
 import { UserDetailPage } from "./components/UserDetailPage";
 import { UsersDirectoryPage } from "./components/UsersDirectoryPage";
 import {
@@ -14,7 +15,9 @@ import {
   fetchClosetOwner,
   formatPossessive,
   formatPreferredStyle,
+  loadOutfitDraftItemIds,
   logoutSession,
+  saveOutfitDraftItemIds,
   titleize,
   User,
 } from "./lib/closet";
@@ -47,16 +50,25 @@ interface NewItemRouteState {
   mode: CreateItemMode;
 }
 
+interface OutfitsRouteState {
+  kind: "outfits";
+}
+
 type AppRoute =
   | RouteState
   | ClosetRouteState
   | ItemRouteState
   | UsersRouteState
   | UserRouteState
-  | NewItemRouteState;
+  | NewItemRouteState
+  | OutfitsRouteState;
 
 function isClosetRoute(route: AppRoute) {
   return route.kind === "closet" || route.kind === "item" || route.kind === "new-item";
+}
+
+function isOutfitRoute(route: AppRoute) {
+  return route.kind === "outfits";
 }
 
 function isProtectedRoute(route: AppRoute) {
@@ -93,6 +105,10 @@ function getRouteFromLocation(
     return { kind: "users" };
   }
 
+  if (normalizedPath === "/outfits") {
+    return { kind: "outfits" };
+  }
+
   if (userMatch) {
     return { kind: "user", userId: Number(userMatch[1]) };
   }
@@ -109,11 +125,12 @@ function getRouteFromLocation(
 }
 
 function navigateTo(pathname: string) {
-  if (window.location.pathname === pathname) {
+  const nextUrl = new URL(pathname, window.location.origin);
+  if (window.location.pathname === nextUrl.pathname && window.location.search === nextUrl.search) {
     return;
   }
 
-  window.history.pushState({}, "", pathname);
+  window.history.pushState({}, "", `${nextUrl.pathname}${nextUrl.search}`);
   window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
@@ -147,6 +164,8 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [homeMessage, setHomeMessage] = useState("");
+  const [outfitDraftItemIds, setOutfitDraftItemIds] = useState<number[]>([]);
+  const [outfitDraftNotice, setOutfitDraftNotice] = useState("");
 
   useEffect(() => {
     const handlePopState = () => setRoute(getRouteFromLocation());
@@ -196,6 +215,37 @@ export default function App() {
     return () => controller.abort();
   }, [route.kind]);
 
+  useEffect(() => {
+    if (!user) {
+      setOutfitDraftItemIds([]);
+      return;
+    }
+
+    const availableItemIds = new Set(user.clothing_items.map((item) => item.id));
+    const persisted = loadOutfitDraftItemIds(user.id).filter((itemId) => availableItemIds.has(itemId));
+    setOutfitDraftItemIds(persisted);
+  }, [user?.id, user?.clothing_items]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    saveOutfitDraftItemIds(user.id, outfitDraftItemIds);
+  }, [outfitDraftItemIds, user]);
+
+  useEffect(() => {
+    if (!outfitDraftNotice) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setOutfitDraftNotice("");
+    }, 2400);
+
+    return () => window.clearTimeout(timeout);
+  }, [outfitDraftNotice]);
+
   const clothingItems = user?.clothing_items ?? [];
   const isLoggedOutProtectedRoute = isProtectedRoute(route) && !user;
 
@@ -205,6 +255,18 @@ export default function App() {
     route.kind === "item"
       ? clothingItems.find((item) => item.id === route.itemId) ?? null
       : null;
+
+  function addItemToOutfitDraft(itemId: number) {
+    setOutfitDraftItemIds((current) => {
+      if (current.includes(itemId)) {
+        setOutfitDraftNotice("Already in your outfit draft.");
+        return current;
+      }
+
+      setOutfitDraftNotice("Added to outfit draft.");
+      return [itemId, ...current];
+    });
+  }
 
   const isAdminRoute = route.kind === "users" || route.kind === "user";
   const isUnauthorizedAdminRoute = Boolean(user && !user.admin && isAdminRoute);
@@ -389,10 +451,21 @@ export default function App() {
         onItemSaved={(nextItem) => setUser((current) => updateUserItem(current, nextItem))}
         onItemDeleted={(itemId) => {
           setUser((current) => removeUserItem(current, itemId));
+          setOutfitDraftItemIds((current) => current.filter((id) => id !== itemId));
           navigateTo("/closet");
         }}
       />
     );
+  } else if (route.kind === "outfits") {
+    pageContent = user ? (
+      <MyOutfitsPage
+        user={user}
+        draftItemIds={outfitDraftItemIds}
+        onDraftChange={setOutfitDraftItemIds}
+        onBrowseCloset={() => navigateTo("/closet")}
+        onOpenItem={(itemId) => navigateTo(`/items/${itemId}`)}
+      />
+    ) : null;
   } else {
     pageContent = (
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -491,6 +564,7 @@ export default function App() {
                     {...item}
                     index={index}
                     onSelect={(itemId) => navigateTo(`/items/${itemId}`)}
+                    onAddToOutfit={addItemToOutfitDraft}
                   />
                 ))}
               </div>
@@ -542,6 +616,17 @@ export default function App() {
                 >
                   Closet
                 </button>
+                <button
+                  onClick={() => navigateTo("/outfits")}
+                  className={`inline-flex items-center justify-center border px-4 py-2.5 text-sm transition-colors ${
+                    isOutfitRoute(route)
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border text-foreground hover:border-foreground"
+                  }`}
+                  style={{ fontFamily: "Outfit, sans-serif" }}
+                >
+                  My Outfits
+                </button>
               </nav>
             ) : null}
             {globalAction}
@@ -550,6 +635,17 @@ export default function App() {
       </header>
 
       <main className={`flex-1 ${route.kind === "home" ? "flex" : ""}`}>{pageContent}</main>
+
+      {outfitDraftNotice ? (
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed bottom-6 right-6 z-50 max-w-sm border border-foreground/20 bg-background/95 px-4 py-3 text-sm shadow-lg backdrop-blur"
+          style={{ fontFamily: "Outfit, sans-serif" }}
+        >
+          {outfitDraftNotice} Draft has {outfitDraftItemIds.length} {outfitDraftItemIds.length === 1 ? "item" : "items"}.
+        </motion.div>
+      ) : null}
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
