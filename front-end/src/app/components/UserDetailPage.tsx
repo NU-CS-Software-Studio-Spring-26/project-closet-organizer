@@ -6,6 +6,7 @@ import {
   formatDisplaySize,
   formatPossessive,
   formatPreferredStyle,
+  formatTagLabel,
   titleize,
   User,
 } from "../lib/closet";
@@ -209,43 +210,47 @@ export function UserDetailPage({
                   </p>
                 </div>
               ) : (
-                user.clothing_items.map((item, index) => (
-                  <motion.button
-                    key={item.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, delay: index * 0.03 }}
-                    onClick={() => onOpenItem(item.id)}
-                    className="w-full text-left border border-border bg-card p-5 hover:border-foreground transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-4">
-                        <div className="h-12 w-12 shrink-0 border border-border rounded-full flex items-center justify-center bg-muted">
-                          <Shirt className="w-5 h-5" />
+                user.clothing_items.map((item, index) => {
+                  const visibleTags = item.tags.slice(0, 3);
+
+                  return (
+                    <motion.button
+                      key={item.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35, delay: index * 0.03 }}
+                      onClick={() => onOpenItem(item.id)}
+                      className="w-full text-left border border-border bg-card p-5 hover:border-foreground transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-4">
+                          <div className="h-12 w-12 shrink-0 border border-border rounded-full flex items-center justify-center bg-muted">
+                            <Shirt className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h3 className="mb-1">{item.name}</h3>
+                            <p
+                              className="text-muted-foreground"
+                              style={{ fontFamily: "Outfit, sans-serif" }}
+                            >
+                              {formatDisplaySize(item.size)}
+                              {visibleTags[0] ? ` · ${formatTagLabel(visibleTags[0])}` : ""}
+                            </p>
+                            <p
+                              className="mt-2 text-sm text-muted-foreground"
+                              style={{ fontFamily: "Outfit, sans-serif" }}
+                            >
+                              {visibleTags.length > 0
+                                ? visibleTags.map(formatTagLabel).join(" · ")
+                                : "No tags added yet"}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="mb-1">{item.name}</h3>
-                          <p
-                            className="text-muted-foreground"
-                            style={{ fontFamily: "Outfit, sans-serif" }}
-                          >
-                            {formatDisplaySize(item.size)}
-                            {item.tags.color ? ` · ${titleize(item.tags.color)}` : ""}
-                            {item.tags.brand ? ` · ${item.tags.brand}` : ""}
-                          </p>
-                          <p
-                            className="text-sm text-muted-foreground mt-2"
-                            style={{ fontFamily: "Outfit, sans-serif" }}
-                          >
-                            {item.tags.season ? titleize(item.tags.season) : "No season tagged"}
-                            {item.tags.style ? ` · ${titleize(item.tags.style)}` : ""}
-                          </p>
-                        </div>
+                        <ChevronRight className="mt-1 h-4 w-4 shrink-0" />
                       </div>
-                      <ChevronRight className="w-4 h-4 mt-1 shrink-0" />
-                    </div>
-                  </motion.button>
-                ))
+                    </motion.button>
+                  );
+                })
               )}
             </div>
           </motion.div>

@@ -60,20 +60,15 @@ class ImageCleanPromptBuilderTest < ActiveSupport::TestCase
       name: "Ivory Silk Blouse",
       user: users(:one),
       size: :small,
-      tags: {
-        "color" => "ivory",
-        "material" => "silk",
-        "style" => "dressy"
-      }
+      tags: [ "ivory", "silk", "dressy", "date night" ]
     )
 
     context = ImageCleanPromptBuilder.for_clothing_item(item)
 
     assert_equal "Ivory Silk Blouse", context[:name]
-    assert_equal "ivory", context[:color]
-    assert_equal "silk", context[:material]
-    assert_equal "dressy", context[:style]
     assert_includes context[:appearance_summary], "Reference item: Ivory Silk Blouse."
+    assert_includes context[:appearance_summary], "Reference tags: ivory, silk, dressy, date night."
     assert_includes context[:hard_constraints].join(" "), "Preserve the same item identity"
+    assert_includes context[:soft_hints].join(" "), "date night"
   end
 end
