@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.5 - 2026-05-04
+
+- Fixed the manual add-item back button so it consistently returns users to the closet page.
+- Restricted users-directory navigation to admin users by adding an admin-only `Users` header button and removing non-admin UI paths into `/users`.
+- Preserved the existing route-level authorization while making the UI navigation match the intended access rules more closely.
+
 ## v1.0.4 - 2026-05-04
 
 - Merged the tag-based closet search and relaxed item schema work with the new outfits and lookbook experience from `main`.
