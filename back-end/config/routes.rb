@@ -13,8 +13,17 @@ Rails.application.routes.draw do
     get "me", to: "sessions#me"
     delete "session", to: "sessions#destroy"
 
-    resources :users, except: %i[ new edit ]
-    resources :clothing_items, except: %i[ new edit ]
+    resources :users, except: %i[new edit]
+    resources :clothing_items, except: %i[new edit] do
+      post :generate_clean_image, on: :member
+    end
+    resources :outfit_uploads, only: %i[create show]
+    resources :outfit_detections, only: [] do
+      post :generate_clean_image, on: :member
+    end
+    resources :image_variants, only: [] do
+      post :preview, on: :collection
+    end
   end
 
   get "*path", to: "fallback#index", constraints: ->(req) { !req.xhr? && req.format.html? }

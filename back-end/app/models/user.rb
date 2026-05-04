@@ -2,6 +2,7 @@ class User < ApplicationRecord
   has_secure_password
 
   has_many :clothing_items, dependent: :destroy
+  has_many :outfit_uploads, dependent: :destroy
 
   validates :username, presence: true, uniqueness: true
   validates :provider, presence: true
@@ -9,10 +10,11 @@ class User < ApplicationRecord
 
   def self.from_google_auth(auth_hash)
     user = find_or_initialize_by(provider: auth_hash.provider, uid: auth_hash.uid)
+    preferred_username = auth_hash.info.name.presence || auth_hash.info.email.presence || "User"
 
     user.assign_attributes(
       email: auth_hash.info.email,
-      username: auth_hash.info.name.presence || auth_hash.info.email,
+      username: resolved_google_username(user, preferred_username),
       avatar_url: auth_hash.info.image
     )
 
@@ -20,4 +22,25 @@ class User < ApplicationRecord
     user.save!
     user
   end
+
+  def self.resolved_google_username(user, preferred_username)
+    return user.username if user.persisted? && user.username.present?
+    return preferred_username unless username_taken?(preferred_username, except_id: user.id)
+
+    suffix = 2
+
+    loop do
+      candidate = "#{preferred_username} #{suffix}"
+      return candidate unless username_taken?(candidate, except_id: user.id)
+
+      suffix += 1
+    end
+  end
+
+  def self.username_taken?(username, except_id: nil)
+    scope = where(username: username)
+    scope = scope.where.not(id: except_id) if except_id.present?
+    scope.exists?
+  end
+  private_class_method :resolved_google_username, :username_taken?
 end

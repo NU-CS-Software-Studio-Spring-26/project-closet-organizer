@@ -1,6 +1,6 @@
 # Project Closet Organizer
 
-Project Closet Organizer is a monorepo with a Rails JSON API in back-end and a React + Vite client in front-end. The app supports browsing users and clothing items and performing create, update, and delete operations for closet entries.
+Project Closet Organizer is a monorepo with a Rails JSON API in `back-end/` and a React + Vite client in `front-end/`. The app supports browsing users and clothing items, creating and editing closet entries, uploading item photos, and importing an outfit photo to detect visible pieces.
 
 ## MVP
 
@@ -11,6 +11,14 @@ Milestone 0 MVP:
 - Support create, update, and delete actions for individual records.
 - Seed development data with at least 20 clothing item records.
 - Provide a single, connected product experience through linked app views.
+
+## Current App Capabilities
+
+- Browse all users and open an individual user closet view.
+- Create, update, and delete clothing items.
+- Upload item photos through Active Storage.
+- Import an outfit photo and receive structured detections for visible pieces.
+- Run the frontend and backend together locally from one root command.
 
 ## Team Members
 
@@ -87,6 +95,12 @@ npm install
 npm run dev
 ```
 
+## Environment Notes
+
+- `start.sh` loads `.env` files from the repo root, `back-end/`, and `front-end/` when present.
+- Outfit detection uses OpenRouter credentials defined in [back-end/.env.example](./back-end/.env.example).
+- The backend serves JSON by default and the frontend talks to it through the Vite `/api` proxy in development.
+
 ## Documentation
 
 - Project overview: [README.md](./README.md)
@@ -97,4 +111,4 @@ npm run dev
 
 ## CI
 
-GitHub Actions currently validates the Rails app in back-end using security checks, linting, and tests via .github/workflows/ci.yml.
+GitHub Actions currently validates the Rails app in `back-end/` using security checks, linting, and tests via `.github/workflows/ci.yml`.

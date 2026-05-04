@@ -1,15 +1,71 @@
-# This file should ensure the existence of records required to run the application in every environment (production,
-# development, test). The code here should be idempotent so that it can be executed at any point in every environment.
-# The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
-#
-# Example:
-#
-#   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
-#     MovieGenre.find_or_create_by!(name: genre_name)
-#   end
+require "date"
+
+srand(20260425)
 
 ClothingItem.destroy_all
 User.destroy_all
+
+SEASON_MONTHS = {
+  spring: [ 3, 4, 5 ],
+  summer: [ 6, 7, 8 ],
+  fall: [ 9, 10, 11 ],
+  winter: [ 12, 1, 2 ],
+  all_season: (1..12).to_a
+}.freeze
+
+WARDROBE_LIBRARY = {
+  smart_casual: [
+    [ "Oxford Shirt", "J.Crew", "cotton", "spring", "blue" ],
+    [ "Merino Crewneck Sweater", "Uniqlo", "merino_wool", "winter", "charcoal" ],
+    [ "Straight-Leg Jeans", "Madewell", "denim", "all_season", "indigo" ],
+    [ "Tailored Chinos", "Banana Republic", "twill", "fall", "khaki" ],
+    [ "Leather Loafers", "Sam Edelman", "leather", "all_season", "black" ],
+    [ "Single-Breasted Blazer", "Theory", "wool_blend", "fall", "navy" ]
+  ],
+  athleisure: [
+    [ "Training Joggers", "Lululemon", "recycled_polyester", "all_season", "black" ],
+    [ "Performance Tee", "Nike", "moisture_wicking_jersey", "summer", "heather_gray" ],
+    [ "Running Hoodie", "Under Armour", "performance_fleece", "winter", "gray" ],
+    [ "Quarter-Zip Pullover", "Vuori", "polyester", "fall", "navy" ],
+    [ "Hybrid Shorts", "Ten Thousand", "nylon", "summer", "stone" ],
+    [ "Trail Shell Jacket", "Patagonia", "ripstop", "spring", "olive" ]
+  ],
+  minimal: [
+    [ "Rib Tank", "Uniqlo", "cotton", "summer", "black" ],
+    [ "Relaxed Trousers", "COS", "twill", "all_season", "taupe" ],
+    [ "Linen Button-Down", "Everlane", "linen", "spring", "white" ],
+    [ "Slip Skirt", "Aritzia", "satin", "summer", "cream" ],
+    [ "Wool Coat", "Mango", "wool", "winter", "camel" ],
+    [ "Ankle Boots", "Steve Madden", "suede", "fall", "brown" ]
+  ],
+  vintage: [
+    [ "Band Tee", "Levis", "cotton", "all_season", "washed_black" ],
+    [ "High-Rise Mom Jeans", "Levis", "denim", "all_season", "light_blue" ],
+    [ "Corduroy Jacket", "Free People", "corduroy", "fall", "rust" ],
+    [ "Pleated Midi Dress", "Reformation", "viscose", "summer", "sage" ],
+    [ "Western Boots", "Frye", "leather", "fall", "cognac" ],
+    [ "Wool Beret", "Anthropologie", "wool", "winter", "burgundy" ]
+  ],
+  polished: [
+    [ "Silk Blouse", "Sezane", "silk", "spring", "ivory" ],
+    [ "Pleated Trousers", "Aritzia", "crepe", "all_season", "black" ],
+    [ "Cashmere Cardigan", "Naadam", "cashmere", "winter", "oatmeal" ],
+    [ "Pencil Skirt", "Theory", "wool_blend", "fall", "charcoal" ],
+    [ "Block Heel Pumps", "Cole Haan", "leather", "all_season", "black" ],
+    [ "Trench Coat", "Everlane", "cotton_blend", "spring", "sand" ]
+  ]
+}.freeze
+
+ADJECTIVES = %w[
+  Classic Relaxed Textured Everyday Soft Structured Lightweight Refined Heritage
+  Clean Tailored Cozy Cropped Oversized Slim Breathable Studio Weekend
+].freeze
+
+SIZE_PROFILES = {
+  slim: %i[xs small medium medium medium],
+  standard: %i[small medium medium large],
+  relaxed: %i[medium large large xl]
+}.freeze
 
 seed_users = [
   {
@@ -19,16 +75,18 @@ seed_users = [
     uid: "seed-alexis-ward",
     password: "password",
     preferred_style: "smart_casual",
-    items: [
-      { name: "Ivory Silk Blouse", size: :small, date: Date.new(2026, 3, 5), material: "silk", season: "spring", style: "smart_casual", brand: "Sezane", color: "ivory" },
-      { name: "Straight-Leg Dark Wash Jeans", size: :medium, date: Date.new(2025, 11, 12), material: "denim", season: "all_season", style: "casual", brand: "Madewell", color: "indigo" },
-      { name: "Camel Wool Coat", size: :medium, date: Date.new(2025, 12, 1), material: "wool", season: "winter", style: "polished", brand: "Everlane", color: "camel" },
-      { name: "Black Loafers", size: :small, date: Date.new(2025, 10, 20), material: "leather", season: "fall", style: "polished", brand: "Sam Edelman", color: "black" },
-      { name: "Striped Oxford Shirt", size: :medium, date: Date.new(2026, 2, 14), material: "cotton", season: "spring", style: "smart_casual", brand: "J.Crew", color: "blue" },
-      { name: "Taupe Wide-Leg Trousers", size: :medium, date: Date.new(2025, 9, 8), material: "linen_blend", season: "fall", style: "workwear", brand: "COS", color: "taupe" },
-      { name: "Golden Knit Cardigan", size: :medium, date: Date.new(2026, 1, 17), material: "cashmere_blend", season: "winter", style: "layered", brand: "Banana Republic", color: "mustard" },
-      { name: "White Leather Sneakers", size: :medium, date: Date.new(2026, 4, 10), material: "leather", season: "spring", style: "casual", brand: "Veja", color: "white" }
-    ]
+    size_profile: :standard,
+    item_count: 20
+  },
+  {
+    username: "annabel_goldman",
+    email: "annabel.goldman@example.com",
+    provider: "google_oauth2",
+    uid: "seed-annabel-goldman",
+    password: "password",
+    preferred_style: "polished",
+    size_profile: :standard,
+    item_count: 0
   },
   {
     username: "jordan_lee",
@@ -68,6 +126,18 @@ seed_users = [
   }
 ]
 
+def random_purchase_date(season_name)
+  season_key = season_name.to_sym
+  month = SEASON_MONTHS.fetch(season_key).sample
+  year = month > Date.today.month ? Date.today.year - 1 : Date.today.year
+  day = rand(1..27)
+  Date.new(year, month, day)
+end
+
+def build_item_name(base_name)
+  "#{ADJECTIVES.sample} #{base_name}"
+end
+
 created_items_count = 0
 
 seed_users.each do |user_data|
@@ -80,13 +150,38 @@ seed_users.each do |user_data|
     preferred_style: user_data[:preferred_style]
   )
 
-  user_data[:items].each do |item_data|
+  if user_data[:items].present?
+    user_data[:items].each do |item_data|
+      ClothingItem.create!(
+        name: item_data[:name],
+        size: item_data[:size],
+        date: item_data[:date],
+        user: user,
+        tags: item_data.slice(:material, :season, :style, :brand, :color)
+      )
+      created_items_count += 1
+    end
+    next
+  end
+
+  style_pool = WARDROBE_LIBRARY.fetch(user.preferred_style.to_sym)
+  size_pool = SIZE_PROFILES.fetch(user_data.fetch(:size_profile, :standard))
+
+  user_data.fetch(:item_count, 0).times do
+    base_name, brand, material, season, color = style_pool.sample
+
     ClothingItem.create!(
-      name: item_data[:name],
-      size: item_data[:size],
-      date: item_data[:date],
+      name: build_item_name(base_name),
+      size: size_pool.sample,
+      date: random_purchase_date(season),
       user: user,
-      tags: item_data.slice(:material, :season, :style, :brand, :color)
+      tags: {
+        material: material,
+        season: season,
+        style: user.preferred_style,
+        brand: brand,
+        color: color
+      }
     )
     created_items_count += 1
   end

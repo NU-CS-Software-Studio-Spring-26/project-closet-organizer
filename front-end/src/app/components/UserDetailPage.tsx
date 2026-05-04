@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, ChevronRight, Plus, Shirt } from "lucide-react";
+import { ArrowLeft, ChevronRight, Shirt } from "lucide-react";
 import {
   fetchUser,
   formatDisplaySize,
@@ -15,7 +15,6 @@ interface UserDetailPageProps {
   initialUser?: User | null;
   onBack: () => void;
   onOpenItem: (itemId: number) => void;
-  onAddItem: (userId: number) => void;
 }
 
 export function UserDetailPage({
@@ -23,7 +22,6 @@ export function UserDetailPage({
   initialUser,
   onBack,
   onOpenItem,
-  onAddItem,
 }: UserDetailPageProps) {
   const [user, setUser] = useState<User | null>(initialUser ?? null);
   const [isLoading, setIsLoading] = useState(!initialUser);
@@ -155,7 +153,7 @@ export function UserDetailPage({
             transition={{ duration: 0.45, delay: 0.06 }}
             className="space-y-6"
           >
-            <div className="flex items-end justify-between gap-4">
+            <div>
               <div>
                 <p
                   className="uppercase tracking-[0.3em] text-xs text-muted-foreground mb-3"
@@ -168,14 +166,6 @@ export function UserDetailPage({
                   Click any item to jump straight into its editable detail page.
                 </p>
               </div>
-              <button
-                onClick={() => onAddItem(user.id)}
-                className="inline-flex items-center gap-2 px-4 py-3 border border-border hover:border-foreground transition-colors shrink-0"
-                style={{ fontFamily: "Outfit, sans-serif" }}
-              >
-                <Plus className="w-4 h-4" />
-                Add Item
-              </button>
             </div>
 
             <div className="space-y-4">

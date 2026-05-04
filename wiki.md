@@ -2,7 +2,7 @@
 
 ## Project Purpose
 
-Project Closet Organizer helps users keep track of wardrobe items in one place. The current milestone focuses on core CRUD functionality and a connected user experience between list and detail views.
+Project Closet Organizer helps users keep track of wardrobe items in one place. The current implementation includes core CRUD functionality, photo-backed item management, and an early outfit-import workflow that detects visible pieces from a single uploaded image.
 
 ## Problem Statement
 
@@ -17,8 +17,15 @@ Closet information is often spread across memory, notes, and photos. This projec
 
 - Two core models: users and clothing items
 - CRUD support for both resources through the Rails API
-- Frontend routes for home, users list, user detail, item detail, and item creation
+- Frontend routes for landing, closet, users list, user detail, item detail, item creation, and outfit import
 - Seed data for demo and testing
+
+## Current Implementation Notes
+
+- The backend now also includes `outfit_uploads` and `outfit_detections` for the outfit-import flow.
+- Clothing item photos and outfit source photos are stored through Active Storage.
+- Outfit detection is currently handled by an OpenRouter request configured in the backend environment.
+- The frontend still uses a lightweight custom router in `front-end/src/app/App.tsx` rather than React Router.
 
 ## Object-Oriented Design Board
 
@@ -32,7 +39,7 @@ Miro board link:
 - Authentication and per-user login sessions
 - Search and filter presets by season, style, and color
 - Outfit builder and saved outfit collections
-- Image upload and visual closet gallery
+- Convert outfit detections directly into saved clothing items
 - Item availability and laundry/rotation tracking
 - Export/import closet data
 
@@ -53,4 +60,5 @@ Miro board link:
 - Backend and frontend are in one monorepo.
 - The active Rails backend lives in `back-end/`; the old duplicate root Rails scaffold has been removed.
 - Backend tests run in GitHub Actions.
-- Deployment target for assignment is Heroku 
+- Frontend tests are not currently part of CI.
+- Deployment target for assignment is Heroku.

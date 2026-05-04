@@ -53,6 +53,45 @@ FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 BACKEND_PID=""
 FRONTEND_PID=""
 
+load_env_file() {
+  local env_file="$1"
+  local line
+  local key
+  local value
+
+  if [[ ! -f "$env_file" ]]; then
+    return
+  fi
+
+  echo "Loading environment from ${env_file#$ROOT_DIR/}"
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+
+    [[ -z "${line//[[:space:]]/}" ]] && continue
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+
+    if [[ "$line" =~ ^[[:space:]]*(export[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+      key="${BASH_REMATCH[2]}"
+      value="${BASH_REMATCH[3]}"
+
+      value="${value#"${value%%[![:space:]]*}"}"
+      value="${value%"${value##*[![:space:]]}"}"
+
+      if [[ "$value" =~ ^\"(.*)\"$ ]]; then
+        value="${BASH_REMATCH[1]}"
+      elif [[ "$value" =~ ^\'(.*)\'$ ]]; then
+        value="${BASH_REMATCH[1]}"
+      fi
+
+      export "$key=$value"
+      continue
+    fi
+
+    echo "Warning: skipping invalid env line in ${env_file#$ROOT_DIR/}: $line" >&2
+  done < "$env_file"
+}
+
 kill_matching_processes() {
   local pattern="$1"
   local service_name="$2"
@@ -130,10 +169,28 @@ if [[ ! -x "$BACKEND_DIR/bin/dev" ]]; then
   exit 1
 fi
 
+if [[ ! -x "$BACKEND_DIR/bin/rails" ]]; then
+  echo "Missing executable Rails binary at $BACKEND_DIR/bin/rails" >&2
+  exit 1
+fi
+
 if [[ ! -f "$FRONTEND_DIR/package.json" ]]; then
   echo "Missing frontend package.json at $FRONTEND_DIR/package.json" >&2
   exit 1
 fi
+
+load_env_file "$ROOT_DIR/.env"
+load_env_file "$ROOT_DIR/.env.local"
+load_env_file "$BACKEND_DIR/.env"
+load_env_file "$BACKEND_DIR/.env.local"
+load_env_file "$FRONTEND_DIR/.env"
+load_env_file "$FRONTEND_DIR/.env.local"
+
+echo "Running backend migrations"
+(
+  cd "$BACKEND_DIR"
+  ./bin/rails db:migrate
+)
 
 kill_matching_processes "$FRONTEND_DIR/node_modules/.bin/vite" "frontend dev server"
 kill_processes_on_port "$BACKEND_PORT" "backend"
