@@ -7,9 +7,9 @@ class OutfitUploadsController < ApplicationController
 
     if @outfit_upload.save
       begin
-        @outfit_upload.analyze!
-      rescue StandardError
-        # The upload record preserves the failure state and error message for the UI.
+        OutfitUploadAnalysisJob.perform_later(@outfit_upload.id)
+      rescue StandardError => error
+        @outfit_upload.update!(status: :failed, error_message: error.message)
       end
 
       render json: outfit_upload_payload(@outfit_upload.reload), status: :created

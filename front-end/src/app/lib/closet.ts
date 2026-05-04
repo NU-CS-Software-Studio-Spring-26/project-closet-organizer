@@ -367,6 +367,22 @@ export async function createOutfitUpload(
   return (await response.json()) as OutfitUpload;
 }
 
+export async function fetchOutfitUpload(id: number, signal?: AbortSignal) {
+  const response = await fetch(`${API_BASE_URL}/outfit_uploads/${id}`, {
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+    },
+    signal,
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response);
+  }
+
+  return (await response.json()) as OutfitUpload;
+}
+
 export async function destroyClothingItem(id: number) {
   const response = await fetch(`${API_BASE_URL}/clothing_items/${id}`, {
     method: "DELETE",

@@ -1,11 +1,20 @@
 require "test_helper"
 
 class OutfitUploadsFlowTest < ActionDispatch::IntegrationTest
+  include ActiveJob::TestHelper
+
   setup do
     @user = users(:one)
+    clear_enqueued_jobs
+    clear_performed_jobs
   end
 
-  test "can create an outfit upload and persist detections" do
+  teardown do
+    clear_enqueued_jobs
+    clear_performed_jobs
+  end
+
+  test "can create an outfit upload and later persist detections" do
     detector_response = {
       provider: "openrouter",
       vision_model: "openai/gpt-4.1-mini",
@@ -50,33 +59,33 @@ class OutfitUploadsFlowTest < ActionDispatch::IntegrationTest
       ]
     }
 
-    assert_difference("OutfitUpload.count", 1) do
-      assert_difference("OutfitDetection.count", 2) do
-        with_crop_pipeline_stubs(
-          detector_response: detector_response,
-          refinement_response: {
-            refined_box: {
-              x: 0.14,
-              y: 0.1,
-              width: 0.32,
-              height: 0.39
-            },
-            crop_confidence: 0.87,
-            notes: "Tightened around the shirt."
-          },
-          verification_response: {
-            accepted: true,
-            quality_score: 0.91,
-            issues: [],
-            notes: "Verified for saving.",
-            final_box: {
-              x: 0.15,
-              y: 0.11,
-              width: 0.3,
-              height: 0.37
-            }
-          }
-        ) do
+    with_crop_pipeline_stubs(
+      detector_response: detector_response,
+      refinement_response: {
+        refined_box: {
+          x: 0.14,
+          y: 0.1,
+          width: 0.32,
+          height: 0.39
+        },
+        crop_confidence: 0.87,
+        notes: "Tightened around the shirt."
+      },
+      verification_response: {
+        accepted: true,
+        quality_score: 0.91,
+        issues: [],
+        notes: "Verified for saving.",
+        final_box: {
+          x: 0.15,
+          y: 0.11,
+          width: 0.3,
+          height: 0.37
+        }
+      }
+    ) do
+      assert_difference("OutfitUpload.count", 1) do
+        assert_enqueued_jobs 1, only: OutfitUploadAnalysisJob do
           post outfit_uploads_url, params: {
             outfit_upload: {
               user_id: @user.id,
@@ -85,21 +94,34 @@ class OutfitUploadsFlowTest < ActionDispatch::IntegrationTest
           }, headers: auth_headers(@user)
         end
       end
-    end
 
-    assert_response :created
-    assert_equal "succeeded", response_json["status"]
-    assert_equal "openai/gpt-4.1-mini", response_json["vision_model"]
-    assert_equal 2, response_json["detections"].length
-    assert_equal "shirt", response_json["detections"].first["category"]
-    assert_not response_json["detections"].first.key?("crop_status")
-    assert_equal 0.12, response_json["detections"].first["coarse_box"]["x"]
-    assert_equal 0.14, response_json["detections"].first["refined_box"]["x"]
-    assert_equal 0.15, response_json["detections"].first["final_box"]["x"]
-    assert_match %r{/rails/active_storage/}, response_json["source_photo_url"]
+      assert_response :created
+      assert_equal "pending", response_json["status"]
+      assert_nil response_json["vision_model"]
+      assert_equal [], response_json["detections"]
+      assert_match %r{/rails/active_storage/}, response_json["source_photo_url"]
+
+      upload_id = response_json["id"]
+
+      assert_difference("OutfitDetection.count", 2) do
+        perform_enqueued_jobs only: OutfitUploadAnalysisJob
+      end
+
+      get outfit_upload_url(upload_id), headers: auth_headers(@user), as: :json
+
+      assert_response :success
+      assert_equal "succeeded", response_json["status"]
+      assert_equal "openai/gpt-4.1-mini", response_json["vision_model"]
+      assert_equal 2, response_json["detections"].length
+      assert_equal "shirt", response_json["detections"].first["category"]
+      assert_not response_json["detections"].first.key?("crop_status")
+      assert_equal 0.12, response_json["detections"].first["coarse_box"]["x"]
+      assert_equal 0.14, response_json["detections"].first["refined_box"]["x"]
+      assert_equal 0.15, response_json["detections"].first["final_box"]["x"]
+    end
   end
 
-  test "returns a failed upload payload when detection raises an error" do
+  test "returns a failed upload payload after async detection raises an error" do
     with_crop_pipeline_stubs(detector_response: ->(_upload) { raise "OPENROUTER_API_KEY is not configured." }) do
       post outfit_uploads_url, params: {
         outfit_upload: {
@@ -110,6 +132,17 @@ class OutfitUploadsFlowTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :created
+    assert_equal "pending", response_json["status"]
+    assert_nil response_json["error_message"]
+    assert_equal [], response_json["detections"]
+
+    upload_id = response_json["id"]
+
+    perform_enqueued_jobs only: OutfitUploadAnalysisJob
+
+    get outfit_upload_url(upload_id), headers: auth_headers(@user), as: :json
+
+    assert_response :success
     assert_equal "failed", response_json["status"]
     assert_equal "OPENROUTER_API_KEY is not configured.", response_json["error_message"]
     assert_equal [], response_json["detections"]
@@ -229,13 +262,20 @@ class OutfitUploadsFlowTest < ActionDispatch::IntegrationTest
             source_photo: item_photo_upload
           }
         }, headers: auth_headers(@user)
+
+        assert_response :created
+        upload_id = response_json["id"]
+
+        perform_enqueued_jobs only: OutfitUploadAnalysisJob
+
+        get outfit_upload_url(upload_id), headers: auth_headers(@user), as: :json
+
+        assert_response :success
+        detection = response_json["detections"].first
+        assert_not detection.key?("crop_status")
+        assert_equal 0.11, detection["final_box"]["x"]
       end
     end
-
-    assert_response :created
-    detection = response_json["detections"].first
-    assert_not detection.key?("crop_status")
-    assert_equal 0.11, detection["final_box"]["x"]
   end
 
   test "can generate a clean image for an outfit detection" do

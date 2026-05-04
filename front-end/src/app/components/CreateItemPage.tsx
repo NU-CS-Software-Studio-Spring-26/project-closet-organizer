@@ -9,6 +9,7 @@ import {
   createOutfitUpload,
   CreateItemMode,
   emptyClothingItemFormValues,
+  fetchOutfitUpload,
   fetchUser,
   formatDisplaySize,
   formatPossessive,
@@ -42,6 +43,7 @@ export function CreateItemPage({
   onBack,
   onItemsCreated,
 }: CreateItemPageProps) {
+  const detectionPollControllerRef = useRef<AbortController | null>(null);
   const [user, setUser] = useState<User | null>(initialUser ?? null);
   const [formValues, setFormValues] = useState(emptyClothingItemFormValues);
   const [isLoading, setIsLoading] = useState(!initialUser);
@@ -104,6 +106,41 @@ export function CreateItemPage({
     outfitUpload?.detections.filter((detection) => selectedDetectionIds.includes(detection.id)) ?? [];
   const selectedCount = selectedDetections.length;
 
+  useEffect(() => {
+    return () => {
+      detectionPollControllerRef.current?.abort();
+    };
+  }, []);
+
+  async function waitForOutfitUpload(uploadId: number, signal: AbortSignal) {
+    const startedAt = Date.now();
+
+    while (!signal.aborted) {
+      const nextUpload = await fetchOutfitUpload(uploadId, signal);
+      setOutfitUpload(nextUpload);
+
+      if (nextUpload.status === "succeeded" || nextUpload.status === "failed") {
+        return nextUpload;
+      }
+
+      if (Date.now() - startedAt >= 90_000) {
+        throw new Error("Detection is taking longer than expected. Please check back in a moment.");
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        const timeoutId = window.setTimeout(resolve, 1500);
+        const abortHandler = () => {
+          window.clearTimeout(timeoutId);
+          reject(new DOMException("Aborted", "AbortError"));
+        };
+
+        signal.addEventListener("abort", abortHandler, { once: true });
+      });
+    }
+
+    throw new DOMException("Aborted", "AbortError");
+  }
+
   async function detectItems(file: File) {
     if (!userId) {
       setErrorMessage("A user is required before you can upload from an image.");
@@ -118,20 +155,39 @@ export function CreateItemPage({
     setCleaningDetectionIds([]);
     setDetectionCleanErrors({});
     setEditedDetections({});
+    detectionPollControllerRef.current?.abort();
 
     try {
       const nextUpload = await createOutfitUpload(userId, { photo: file });
       setOutfitUpload(nextUpload);
+
+      if (nextUpload.status === "pending" || nextUpload.status === "processing") {
+        const controller = new AbortController();
+        detectionPollControllerRef.current = controller;
+        const completedUpload = await waitForOutfitUpload(nextUpload.id, controller.signal);
+
+        if (completedUpload.status === "failed" && completedUpload.error_message) {
+          setErrorMessage(completedUpload.error_message);
+        }
+      } else if (nextUpload.status === "failed" && nextUpload.error_message) {
+        setErrorMessage(nextUpload.error_message);
+      }
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+
       setErrorMessage(
         error instanceof Error ? error.message : "Unable to analyze this item photo.",
       );
     } finally {
+      detectionPollControllerRef.current = null;
       setIsDetecting(false);
     }
   }
 
   function handleImageFileChange(file: File | null) {
+    detectionPollControllerRef.current?.abort();
     photoState.updateSelectedFile(file);
     setOutfitUpload(null);
     setSelectedDetectionIds([]);
@@ -143,6 +199,7 @@ export function CreateItemPage({
   }
 
   function clearImageSelection() {
+    detectionPollControllerRef.current?.abort();
     photoState.clearSelectedFile();
     setOutfitUpload(null);
     setSelectedDetectionIds([]);
