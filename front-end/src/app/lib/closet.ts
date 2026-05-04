@@ -118,6 +118,18 @@ export interface OutfitUpload {
   updated_at?: string;
 }
 
+export interface Outfit {
+  id: number;
+  user_id: number;
+  name: string;
+  tags?: string[] | null;
+  notes?: string | null;
+  item_ids: number[];
+  items: ClothingItem[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 export type CreateItemMode = "manual" | "image";
 
 export interface ClothingItemFormValues {
@@ -146,6 +158,51 @@ export interface TemporaryCleanImageResult {
   content_type: string;
   data_url: string;
   filename: string;
+}
+
+function outfitDraftStorageKey(userId: number) {
+  return `outfit-draft-item-ids:${userId}`;
+}
+
+export function loadOutfitDraftItemIds(userId: number) {
+  if (typeof window === "undefined") {
+    return [] as number[];
+  }
+
+  const raw = window.localStorage.getItem(outfitDraftStorageKey(userId));
+  if (!raw) {
+    return [] as number[];
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [] as number[];
+    }
+
+    return parsed
+      .map((value) => Number(value))
+      .filter((value) => Number.isInteger(value) && value > 0);
+  } catch {
+    return [] as number[];
+  }
+}
+
+export function saveOutfitDraftItemIds(userId: number, itemIds: number[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const normalized = itemIds.filter((value, index, array) =>
+    Number.isInteger(value) && value > 0 && array.indexOf(value) === index,
+  );
+
+  if (normalized.length === 0) {
+    window.localStorage.removeItem(outfitDraftStorageKey(userId));
+    return;
+  }
+
+  window.localStorage.setItem(outfitDraftStorageKey(userId), JSON.stringify(normalized));
 }
 
 export function emptyClothingItemFormValues(): ClothingItemFormValues {
@@ -382,6 +439,103 @@ export async function fetchOutfitUpload(id: number, signal?: AbortSignal) {
   }
 
   return (await response.json()) as OutfitUpload;
+}
+
+export async function fetchOutfits(signal?: AbortSignal) {
+  const response = await fetch(`${API_BASE_URL}/outfits`, {
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+    },
+    signal,
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response);
+  }
+
+  return (await response.json()) as Outfit[];
+}
+
+interface CreateOutfitInput {
+  userId: number;
+  name: string;
+  itemIds: number[];
+  notes?: string;
+  tags?: string[];
+}
+
+export async function createOutfit(input: CreateOutfitInput) {
+  const response = await fetch(`${API_BASE_URL}/outfits`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      outfit: {
+        user_id: input.userId,
+        name: input.name,
+        item_ids: input.itemIds,
+        notes: input.notes,
+        tags: input.tags,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response);
+  }
+
+  return (await response.json()) as Outfit;
+}
+
+interface UpdateOutfitInput {
+  id: number;
+  name: string;
+  itemIds: number[];
+  notes?: string;
+  tags?: string[];
+}
+
+export async function updateOutfit(input: UpdateOutfitInput) {
+  const response = await fetch(`${API_BASE_URL}/outfits/${input.id}`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      outfit: {
+        name: input.name,
+        item_ids: input.itemIds,
+        notes: input.notes,
+        tags: input.tags,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response);
+  }
+
+  return (await response.json()) as Outfit;
+}
+
+export async function destroyOutfit(id: number) {
+  const response = await fetch(`${API_BASE_URL}/outfits/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response);
+  }
 }
 
 export async function destroyClothingItem(id: number) {

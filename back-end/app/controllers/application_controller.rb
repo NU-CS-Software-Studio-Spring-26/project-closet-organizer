@@ -158,6 +158,25 @@ class ApplicationController < ActionController::API
     payload
   end
 
+  def outfit_payload(outfit)
+    payload = outfit.serializable_hash(
+      only: %i[
+        id
+        user_id
+        name
+        tags
+        notes
+        created_at
+        updated_at
+      ]
+    )
+    payload["item_ids"] = outfit.clothing_items.map(&:id)
+    payload["items"] = outfit.clothing_items.order(:name).map do |item|
+      clothing_item_payload(item, include_user: false)
+    end
+    payload
+  end
+
   def test_user_id
     return unless Rails.env.test?
 

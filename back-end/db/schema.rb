@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_04_011000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_04_022100) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -93,6 +93,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_04_011000) do
     t.index ["outfit_upload_id"], name: "index_outfit_detections_on_outfit_upload_id"
   end
 
+  create_table "outfit_items", force: :cascade do |t|
+    t.integer "clothing_item_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "outfit_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["clothing_item_id"], name: "index_outfit_items_on_clothing_item_id"
+    t.index ["outfit_id", "clothing_item_id"], name: "index_outfit_items_on_outfit_id_and_clothing_item_id", unique: true
+    t.index ["outfit_id"], name: "index_outfit_items_on_outfit_id"
+  end
+
   create_table "outfit_uploads", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "detected_at"
@@ -104,6 +114,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_04_011000) do
     t.integer "user_id", null: false
     t.string "vision_model"
     t.index ["user_id"], name: "index_outfit_uploads_on_user_id"
+  end
+
+  create_table "outfits", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.text "notes"
+    t.json "tags"
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["user_id"], name: "index_outfits_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -125,5 +145,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_04_011000) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "clothing_items", "users"
   add_foreign_key "outfit_detections", "outfit_uploads"
+  add_foreign_key "outfit_items", "clothing_items"
+  add_foreign_key "outfit_items", "outfits"
   add_foreign_key "outfit_uploads", "users"
+  add_foreign_key "outfits", "users"
 end
