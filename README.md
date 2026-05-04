@@ -1,24 +1,28 @@
 # Project Closet Organizer
 
-Project Closet Organizer is a monorepo with a Rails JSON API in `back-end/` and a React + Vite client in `front-end/`. The app supports browsing users and clothing items, creating and editing closet entries, uploading item photos, and importing an outfit photo to detect visible pieces.
+Project Closet Organizer is a monorepo with a Rails JSON API in `back-end/` and a React + Vite client in `front-end/`. The Milestone 1 app supports Google-authenticated closet management, item photo uploads, AI-assisted image cleanup, outfit building, and outfit-photo import that detects visible clothing pieces.
 
-## MVP
+## Milestone 1 Scope
 
-Milestone 0 MVP:
-
-- Manage closet data with at least two models: users and clothing items.
-- View all entries and individual entries for the core data.
-- Support create, update, and delete actions for individual records.
-- Seed development data with at least 20 clothing item records.
-- Provide a single, connected product experience through linked app views.
+- Google sign-in with session-backed authentication
+- Protected user-specific closet data
+- CRUD for clothing items
+- Search, filter, and sort on the closet page
+- Saved outfits built from closet items
+- Outfit-photo upload and detection review flow
+- Flash/error/empty-state handling across the main user journey
+- Heroku deployment from the repository root
 
 ## Current App Capabilities
 
-- Browse all users and open an individual user closet view.
-- Create, update, and delete clothing items.
-- Upload item photos through Active Storage.
-- Import an outfit photo and receive structured detections for visible pieces.
-- Run the frontend and backend together locally from one root command.
+- Sign in with Google and load the current user through `/me`
+- View and manage the signed-in user closet at `/closet`
+- Create, edit, delete, and photo-manage clothing items
+- Generate cleaned catalog-style item images
+- Save outfits from owned closet items at `/outfits`
+- Upload an outfit photo, review detections, and convert detections into closet items
+- Restrict `/users` and `/users/:id` to admin users only
+- Show frontend not-found and unauthorized states instead of raw backend responses
 
 ## Team Members
 
@@ -34,26 +38,16 @@ Heroku deployment link:
 
 - https://closet-organizer-app-6a29560f355b.herokuapp.com/
 
-## Communication
-
-Team communication and decision-making rules:
-
-- Primary async channel: group chat for daily updates, blockers, and status.
-- Meeting cadence: brief sync at least twice per week, with extra sessions before deadlines.
-- Branch and PR workflow: each feature goes through a pull request and at least one teammate review when possible.
-- Decision rule: prefer consensus; if consensus cannot be reached quickly, majority vote decides and the outcome is documented in the PR.
-- Ownership and support: each task has one owner, but all members are expected to be able to run, test, and explain every part of the milestone deliverables.
-
 ## Repository Layout
 
-- front-end: React 19 + Vite client application
-- back-end: the only Rails backend in the repo, used for local dev, CI, and deployment
-- .github: automation and CI workflows
-- Procfile: Heroku process definitions that run the app from `back-end/`
-- package.json: root deployment glue that builds `front-end/` into `back-end/public`
-- start.sh: root-level launcher that boots both apps together
-- PROJECT_INDEX.md: concise structure index
-- wiki.md: extended project notes, roadmap, references, and design links
+- `front-end/`: React 19 + Vite client application
+- `back-end/`: Rails backend used for local development, CI, and deployment
+- `.github/`: CI workflows and automation
+- `Procfile`: Heroku process definitions that run the app from `back-end/`
+- `package.json`: root deployment glue that builds `front-end/` into `back-end/public`
+- `start.sh`: root-level launcher that boots both apps together
+- `PROJECT_INDEX.md`: concise repository structure index
+- `wiki.md`: extended project background, scope notes, and roadmap
 
 ## Getting Started
 
@@ -67,8 +61,8 @@ From the repository root:
 
 This starts:
 
-- Rails at http://127.0.0.1:3000
-- Vite at http://127.0.0.1:5173
+- Rails at `http://127.0.0.1:3000`
+- Vite at `http://127.0.0.1:5173`
 
 Override ports if needed:
 
@@ -98,8 +92,26 @@ npm run dev
 ## Environment Notes
 
 - `start.sh` loads `.env` files from the repo root, `back-end/`, and `front-end/` when present.
-- Outfit detection uses OpenRouter credentials defined in [back-end/.env.example](./back-end/.env.example).
-- The backend serves JSON by default and the frontend talks to it through the Vite `/api` proxy in development.
+- Google auth expects `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+- Outfit detection and AI cleanup use OpenRouter credentials defined in [back-end/.env.example](./back-end/.env.example).
+- Production image storage is intended to use S3-compatible credentials through Active Storage.
+- In local development, the frontend talks to Rails through the Vite `/api` proxy.
+
+## Seeds
+
+`back-end/db/seeds.rb` currently creates:
+
+- one admin Google-backed user: `annabel_goldman`
+- the Northwestern email `annabelgoldman2025@u.northwestern.edu`
+- a 20-item demo closet with realistic wardrobe tags
+
+## Testing And CI
+
+- Rails tests run in GitHub Actions through `.github/workflows/ci.yml`
+- CI also runs `brakeman`, `bundler-audit`, and `rubocop`
+- Recent local verification:
+  `npm run build`
+  `bundle exec rails test`
 
 ## Documentation
 
@@ -108,7 +120,3 @@ npm run dev
 - Project wiki: [wiki.md](./wiki.md)
 - Backend details: [back-end/README.md](./back-end/README.md)
 - Frontend details: [front-end/README.md](./front-end/README.md)
-
-## CI
-
-GitHub Actions currently validates the Rails app in `back-end/` using security checks, linting, and tests via `.github/workflows/ci.yml`.

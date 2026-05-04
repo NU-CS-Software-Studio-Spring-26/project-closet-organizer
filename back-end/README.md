@@ -1,33 +1,28 @@
 # Digital Closet Organizer API
 
-Rails 8 JSON backend for the closet organizer app.
+Rails 8 JSON backend for the Closet Organizer Milestone 1 app.
 
 ## Stack
 
-- Ruby 3.2.2
+- Ruby 3.3.6
 - Rails 8.1.3
-- SQLite
+- SQLite for local development and test
+- PostgreSQL in deployment
 - Puma
-- bcrypt via `has_secure_password`
-- Active Storage for image uploads
+- `has_secure_password`
+- OmniAuth Google OAuth 2
+- Active Storage for uploaded and generated images
 
-## What It Does
+## What The Backend Handles
 
-The backend currently exposes CRUD endpoints for:
-
-- users
-- clothing items
-- outfit uploads
-
-Clothing items belong to users and store flexible metadata in a JSON `tags` field for:
-
-- `material`
-- `season`
-- `style`
-- `brand`
-- `color`
-
-Outfit uploads belong to users, store a source image through Active Storage, and create ordered `outfit_detections` after analysis.
+- session-backed Google sign-in and logout
+- current-user lookup through `GET /me`
+- user-scoped clothing item CRUD
+- admin-only user directory access
+- saved outfit CRUD with owned-item validation
+- outfit photo upload, async analysis, and detection persistence
+- AI-assisted image cleanup for clothing items and verified detections
+- SPA fallback for browser HTML requests
 
 ## Local Setup
 
@@ -37,11 +32,15 @@ bin/rails db:prepare db:seed
 bin/dev
 ```
 
-By default the app runs on `http://127.0.0.1:3000`.
+Default local backend URL:
 
-If you are running the full repo from the root, use [start.sh](../start.sh) instead.
+```text
+http://127.0.0.1:3000
+```
 
-## Bundler and Deploys
+To run the full monorepo together, use [start.sh](../start.sh) from the repository root.
+
+## Bundler And Deploys
 
 Heroku resolves gems from the repository root `Gemfile`, which in turn loads this backend `Gemfile`.
 
@@ -52,44 +51,60 @@ bundle install
 cd back-end && bundle install
 ```
 
-The root `Gemfile.lock` is what Heroku uses during deploy, and `back-end/Gemfile.lock` is what local backend commands use.
+The root `Gemfile.lock` is used during deploy, and `back-end/Gemfile.lock` is used by local backend commands.
 
 ## API Routes
 
 ```text
-GET    /up
-GET    /
-GET    /users
-POST   /users
-GET    /users/:id
-PATCH  /users/:id
-DELETE /users/:id
-GET    /clothing_items
-POST   /clothing_items
-GET    /clothing_items/:id
-PATCH  /clothing_items/:id
-DELETE /clothing_items/:id
-POST   /outfit_uploads
-GET    /outfit_uploads/:id
+GET     /up
+GET     /me
+DELETE  /session
+POST    /auth/:provider/callback
+GET     /auth/failure
+GET     /users
+POST    /users
+GET     /users/:id
+PATCH   /users/:id
+DELETE  /users/:id
+GET     /clothing_items
+POST    /clothing_items
+GET     /clothing_items/:id
+PATCH   /clothing_items/:id
+DELETE  /clothing_items/:id
+POST    /clothing_items/:id/generate_clean_image
+GET     /outfits
+POST    /outfits
+GET     /outfits/:id
+PATCH   /outfits/:id
+DELETE  /outfits/:id
+POST    /outfit_uploads
+GET     /outfit_uploads/:id
+POST    /outfit_detections/:id/generate_clean_image
+POST    /image_variants/preview
 ```
 
 Notes:
 
-- `/` resolves to `clothing_items#index`
-- responses default to JSON
-- CORS headers are added for allowed frontend dev origins
-- `ApplicationController` returns `404` JSON for missing records and `422` JSON for validation failures
+- API responses default to JSON.
+- `/` resolves to `clothing_items#index` inside the JSON scope.
+- HTML browser requests for SPA routes fall back to the frontend shell.
+- `ApplicationController` returns `404` JSON for missing records and `422` JSON for validation failures.
 
 ## Data Model
 
 ### `User`
 
 - `username`
+- `email`
 - `preferred_style`
+- `provider`
+- `uid`
+- `avatar_url`
+- `admin`
 - `password_digest`
 - `has_many :clothing_items`
+- `has_many :outfits`
 - `has_many :outfit_uploads`
-- `has_secure_password`
 
 ### `ClothingItem`
 
@@ -99,7 +114,8 @@ Notes:
 - `tags`
 - `user_id`
 - `photo` via Active Storage
-- `belongs_to :user`
+- `cleaned_photo` via Active Storage
+- clean-image status metadata
 
 Supported `size` enum values:
 
@@ -108,6 +124,15 @@ Supported `size` enum values:
 - `medium`
 - `large`
 - `xl`
+
+### `Outfit`
+
+- `user_id`
+- `name`
+- `tags`
+- `notes`
+- `has_many :outfit_items`
+- `has_many :clothing_items, through: :outfit_items`
 
 ### `OutfitUpload`
 
@@ -136,22 +161,25 @@ Supported `status` enum values:
 - `suggested_name`
 - `details`
 - `position`
+- coarse, refined, and final bounding boxes
+- `cleaned_photo` via Active Storage
+- crop-status and clean-image status metadata
 
 ## Seeds
 
 `db/seeds.rb` currently creates:
 
-- one populated user: `alexis_ward`
-- one empty user: `annabel_goldman`
-- 20 clothing items with randomized sizes and tag values for the populated user
+- one Google-backed admin user: `annabel_goldman`
+- email `annabelgoldman2025@u.northwestern.edu`
+- a 20-item demo closet with realistic wardrobe tags
 
-Load them with:
+Load seeds with:
 
 ```bash
 bin/rails db:seed
 ```
 
-## Tests and Quality Checks
+## Tests And Quality Checks
 
 Run the backend test suite:
 
@@ -167,15 +195,16 @@ bin/brakeman --no-pager
 bin/bundler-audit
 ```
 
-Current backend test coverage includes model tests plus integration tests for users, clothing items, and outfit uploads.
+Current backend coverage includes model tests, integration tests for auth-sensitive flows, clothing items, outfits, uploads, and clean-image services.
 
 ## Environment
 
 See `back-end/.env.example` for expected variables.
 
-- `OPENROUTER_API_KEY` is required for outfit detection.
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` enable Google sign-in.
+- `OPENROUTER_API_KEY` is required for outfit detection and image-cleaning features.
 - `OPENROUTER_MODEL` defaults to `openai/gpt-4.1-mini`.
-- `OUTFIT_CROP_CYCLE_LIMIT` defaults to `1` and controls how many crop refinement/verification cycles run per detected item.
+- `OUTFIT_CROP_CYCLE_LIMIT` controls refinement and verification retries.
 - Active Storage can be configured for S3-style storage through the provided AWS variables.
 
 ## Frontend Integration
