@@ -62,6 +62,15 @@ interface OutfitsRouteState {
   kind: "outfits";
 }
 
+interface NotFoundRouteState {
+  kind: "not-found";
+}
+
+interface HomeMessageState {
+  kind: "error" | "success";
+  text: string;
+}
+
 type AppRoute =
   | RouteState
   | ClosetRouteState
@@ -69,7 +78,8 @@ type AppRoute =
   | UsersRouteState
   | UserRouteState
   | NewItemRouteState
-  | OutfitsRouteState;
+  | OutfitsRouteState
+  | NotFoundRouteState;
 
 function isClosetRoute(route: AppRoute) {
   return route.kind === "closet" || route.kind === "item" || route.kind === "new-item";
@@ -84,7 +94,20 @@ function isUsersRoute(route: AppRoute) {
 }
 
 function isProtectedRoute(route: AppRoute) {
-  return route.kind !== "home";
+  return route.kind !== "home" && route.kind !== "not-found";
+}
+
+function authErrorMessage(code: string | null) {
+  switch (code) {
+    case "auth_cancelled":
+      return "Google sign-in was cancelled before it finished.";
+    case "google_auth_failed":
+      return "Google sign-in could not be completed. Please try again.";
+    case "signin_failed":
+      return "Sign-in failed. Please try again.";
+    default:
+      return "We couldn't sign you in. Please try again.";
+  }
 }
 
 function parseCreateItemMode(value: string | null): CreateItemMode {
@@ -133,7 +156,7 @@ function getRouteFromLocation(
     return { kind: "home" };
   }
 
-  return { kind: "closet" };
+  return { kind: "not-found" };
 }
 
 function navigateTo(pathname: string) {
@@ -219,7 +242,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [homeMessage, setHomeMessage] = useState("");
+  const [homeMessage, setHomeMessage] = useState<HomeMessageState | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState("all");
   const [sortOption, setSortOption] = useState<ClosetSortOption>("name-asc");
@@ -233,7 +256,23 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    const authError = query.get("auth_error");
+    if (!authError) {
+      return;
+    }
+
+    setHomeMessage({ kind: "error", text: authErrorMessage(authError) });
+    query.delete("auth_error");
+
+    const nextSearch = query.toString();
+    const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`;
+    window.history.replaceState({}, "", nextUrl);
+  }, [route.kind]);
+
+  useEffect(() => {
     if (!isProtectedRoute(route)) {
+      setIsLoading(false);
       return;
     }
 
@@ -248,12 +287,12 @@ export default function App() {
         const nextUser = await fetchClosetOwner(controller.signal);
         if (!nextUser) {
           setUser(null);
-          setHomeMessage(unauthorizedMessage);
+          setHomeMessage({ kind: "error", text: unauthorizedMessage });
           navigateTo("/");
           return;
         }
 
-        setHomeMessage("");
+        setHomeMessage((current) => (current?.kind === "error" ? null : current));
         setUser(nextUser);
       } catch (error) {
         if (!controller.signal.aborted) {
@@ -357,6 +396,7 @@ export default function App() {
         }
 
         setUser(null);
+        setHomeMessage({ kind: "success", text: "Signed out successfully." });
         navigateTo("/");
       }}
       className="inline-flex items-center justify-center gap-3 border border-border px-4 py-2.5 text-sm transition-colors hover:border-foreground"
@@ -418,12 +458,42 @@ export default function App() {
             </button>
           </div>
           {homeMessage ? (
-            <div className="mt-6 border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              <p style={{ fontFamily: "Outfit, sans-serif" }}>{homeMessage}</p>
+            <div
+              className={`mt-6 px-4 py-3 text-sm ${
+                homeMessage.kind === "success"
+                  ? "border border-emerald-300/40 bg-emerald-50 text-emerald-900"
+                  : "border border-destructive/30 bg-destructive/10 text-destructive"
+              }`}
+            >
+              <p style={{ fontFamily: "Outfit, sans-serif" }}>{homeMessage.text}</p>
             </div>
           ) : null}
         </motion.div>
       </section>
+    );
+  } else if (route.kind === "not-found") {
+    pageContent = (
+      <div className="max-w-3xl mx-auto px-6 py-16">
+        <div className="border border-border bg-card p-8">
+          <p
+            className="uppercase tracking-[0.3em] text-xs text-muted-foreground mb-3"
+            style={{ fontFamily: "Outfit, sans-serif" }}
+          >
+            Page Not Found
+          </p>
+          <h1 className="mb-3">We couldn&apos;t find that page.</h1>
+          <p className="mb-6 text-muted-foreground" style={{ fontFamily: "Outfit, sans-serif" }}>
+            The link may be out of date, or the page may have been moved.
+          </p>
+          <button
+            onClick={() => navigateTo(user ? "/closet" : "/")}
+            className="inline-flex items-center justify-center border border-border px-4 py-2.5 text-sm transition-colors hover:border-foreground"
+            style={{ fontFamily: "Outfit, sans-serif" }}
+          >
+            {user ? "Back to closet" : "Back home"}
+          </button>
+        </div>
+      </div>
     );
   } else if (isUnauthorizedAdminRoute) {
     pageContent = (
