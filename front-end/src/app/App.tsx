@@ -79,6 +79,10 @@ function isOutfitRoute(route: AppRoute) {
   return route.kind === "outfits";
 }
 
+function isUsersRoute(route: AppRoute) {
+  return route.kind === "users" || route.kind === "user";
+}
+
 function isProtectedRoute(route: AppRoute) {
   return route.kind !== "home";
 }
@@ -477,19 +481,7 @@ export default function App() {
         userId={targetUserId}
         initialMode={route.mode}
         initialUser={targetUser}
-        onBack={() => {
-          if (route.mode === "image") {
-            navigateTo("/closet");
-            return;
-          }
-
-          if (route.userId) {
-            navigateTo(`/users/${route.userId}`);
-            return;
-          }
-
-          navigateTo("/closet");
-        }}
+        onBack={() => navigateTo("/closet")}
         onItemsCreated={(nextItems) => {
           setUser((current) => {
             if (!current || current.id !== targetUserId || nextItems.length === 0) {
@@ -756,6 +748,19 @@ export default function App() {
                 >
                   My Outfits
                 </button>
+                {user.admin ? (
+                  <button
+                    onClick={() => navigateTo("/users")}
+                    className={`inline-flex items-center justify-center border px-4 py-2.5 text-sm transition-colors ${
+                      isUsersRoute(route)
+                        ? "border-foreground bg-foreground text-background"
+                        : "border-border text-foreground hover:border-foreground"
+                    }`}
+                    style={{ fontFamily: "Outfit, sans-serif" }}
+                  >
+                    Users
+                  </button>
+                ) : null}
               </nav>
             ) : null}
             {globalAction}

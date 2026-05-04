@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.0.7 - 2026-05-04
+
+- Updated Google sign-in to reuse an existing seeded user when the Google account email already exists in the database.
+- Preserved seeded admin access by attaching the real Google UID to the existing user record instead of creating a duplicate account.
+- Added regression test coverage for same-email and case-insensitive Google sign-in reuse.
+
+## v1.0.6 - 2026-05-04
+
+- Simplified demo seed data so the database now creates the real Northwestern admin account instead of additional Google users you cannot sign into locally.
+- Seeded `annabelgoldman2025@u.northwestern.edu` with admin access and a 20-item demo closet.
+- Removed extra seeded demo users so the development data better matches the team’s actual login flow.
+
+## v1.0.5 - 2026-05-04
+
+- Fixed the manual add-item back button so it consistently returns users to the closet page.
+- Restricted users-directory navigation to admin users by adding an admin-only `Users` header button and removing non-admin UI paths into `/users`.
+- Preserved the existing route-level authorization while making the UI navigation match the intended access rules more closely.
+
 ## v1.0.4 - 2026-05-04
 
 - Merged the tag-based closet search and relaxed item schema work with the new outfits and lookbook experience from `main`.
@@ -14,6 +32,8 @@
 
 ## v1.0.2 - 2026-05-03
 
+- Fixed deployed routing so browser visits to `/users` and `/users/:id` render the frontend app instead of raw JSON responses.
+- Preserved JSON authorization behavior for API requests while restoring correct SPA fallback behavior for HTML requests.
 - Added full outfits support across back-end and front-end, including outfit CRUD endpoints, user-scoped authorization, and outfit-to-item associations.
 - Introduced new data models and schema updates for outfits and outfit items, including ownership validation and uniqueness constraints.
 - Added the My Outfits experience with create/edit/delete flows and outfit item grouping from closet pieces.

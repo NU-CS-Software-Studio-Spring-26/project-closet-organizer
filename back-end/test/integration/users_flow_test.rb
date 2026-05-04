@@ -13,6 +13,13 @@ class UsersFlowTest < ActionDispatch::IntegrationTest
     assert_equal [ @user.username, @admin.username ].sort, response_json.map { |user| user["username"] }
   end
 
+  test "browser html request for users index falls back to the frontend app" do
+    get "/users"
+
+    assert_response :success
+    assert_includes response.body, "<div id=\"root\"></div>"
+  end
+
   test "non-admin cannot load users index" do
     get users_url, headers: auth_headers(@user), as: :json
 
@@ -25,6 +32,13 @@ class UsersFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_equal @user.username, response_json["username"]
+  end
+
+  test "browser html request for user show falls back to the frontend app" do
+    get "/users/#{@user.id}"
+
+    assert_response :success
+    assert_includes response.body, "<div id=\"root\"></div>"
   end
 
   test "non-admin cannot load user show" do

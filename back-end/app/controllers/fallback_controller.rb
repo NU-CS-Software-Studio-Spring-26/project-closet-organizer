@@ -1,5 +1,32 @@
 class FallbackController < ActionController::Base
   def index
-    render file: Rails.root.join("public/index.html")
+    render file: resolved_index_path, layout: false
+  rescue ArgumentError
+    render html: fallback_html, layout: false
+  end
+
+  private
+
+  def resolved_index_path
+    [
+      Rails.root.join("public/index.html"),
+      Rails.root.parent.join("front-end/dist/index.html")
+    ].find { |path| path.exist? } || Rails.root.join("public/index.html")
+  end
+
+  def fallback_html
+    <<~HTML.html_safe
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>Closet Organizer</title>
+        </head>
+        <body>
+          <div id="root"></div>
+        </body>
+      </html>
+    HTML
   end
 end

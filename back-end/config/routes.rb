@@ -8,6 +8,9 @@ Rails.application.routes.draw do
   match "/auth/:provider/callback", to: "sessions#create", via: %i[ get post ]
   get "/auth/failure", to: "sessions#failure"
 
+  get "users", to: "fallback#index", constraints: ->(req) { !req.xhr? && req.format.html? }
+  get "users/:id", to: "fallback#index", constraints: ->(req) { !req.xhr? && req.format.html? }
+
   scope defaults: { format: :json } do
     root "clothing_items#index"
     get "me", to: "sessions#me"
