@@ -12,8 +12,7 @@ class OutfitUpload < ApplicationRecord
 
   validates :status, presence: true
   validate :source_photo_must_be_present
-  validate :source_photo_must_be_an_image
-  validate :source_photo_size_within_limit
+  validate :source_photo_meets_image_policy
 
   def analyze!
     OutfitUploadAnalyzer.call(self)
@@ -27,17 +26,7 @@ class OutfitUpload < ApplicationRecord
     errors.add(:source_photo, "must be attached")
   end
 
-  def source_photo_must_be_an_image
-    return unless source_photo.attached?
-    return if source_photo.blob.content_type&.start_with?("image/")
-
-    errors.add(:source_photo, "must be an image")
-  end
-
-  def source_photo_size_within_limit
-    return unless source_photo.attached?
-    return if source_photo.blob.byte_size <= 10.megabytes
-
-    errors.add(:source_photo, "must be 10 MB or smaller")
+  def source_photo_meets_image_policy
+    ImageAttachmentPolicy.validate_attached(self, :source_photo, source_photo)
   end
 end

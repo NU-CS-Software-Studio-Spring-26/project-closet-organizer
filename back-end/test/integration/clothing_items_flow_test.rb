@@ -69,7 +69,7 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
           user_id: @user.id,
           size: "medium",
           tags: [ "white", "tee", "casual" ],
-          photo: item_photo_upload
+          photo: item_photo_upload_png
         }
       }, headers: auth_headers(@user)
     end
@@ -77,6 +77,44 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
     assert_response :created
     assert_predicate ClothingItem.order(:created_at).last.photo, :attached?
     assert_match %r{/rails/active_storage/}, response_json["image_url"]
+  end
+
+  test "rejects clothing item photos with disallowed content types" do
+    assert_no_difference("ClothingItem.count") do
+      post clothing_items_url, params: {
+        clothing_item: {
+          name: "Sneaky SVG",
+          category: "shirt",
+          user_id: @user.id,
+          size: "medium",
+          tags: [ "bad" ],
+          photo: item_photo_upload
+        }
+      }, headers: auth_headers(@user)
+    end
+
+    assert_response :unprocessable_content
+    assert_match(/JPEG, PNG, WebP, GIF, or HEIC/i, response.body)
+  end
+
+  test "rejects clothing item photos that exceed the size limit" do
+    oversized = Rack::Test::UploadedFile.new(oversized_photo_path, "image/png")
+
+    assert_no_difference("ClothingItem.count") do
+      post clothing_items_url, params: {
+        clothing_item: {
+          name: "Huge File",
+          category: "shirt",
+          user_id: @user.id,
+          size: "medium",
+          tags: [ "big" ],
+          photo: oversized
+        }
+      }, headers: auth_headers(@user)
+    end
+
+    assert_response :unprocessable_content
+    assert_match(/10 MB or smaller/i, response.body)
   end
 
   test "can create a clothing item with a cropped photo" do
@@ -309,6 +347,18 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
 
   def item_photo_upload_png
     Rack::Test::UploadedFile.new(file_fixture("item-photo.png"), "image/png")
+  end
+
+  def oversized_photo_path
+    path = Rails.root.join("tmp", "oversized-test-image.png")
+    unless File.exist?(path) && File.size(path) > 10.megabytes
+      FileUtils.mkdir_p(File.dirname(path))
+      File.open(path, "wb") do |file|
+        file.write("\x89PNG\r\n\x1a\n")
+        file.write("\x00" * (10.megabytes + 1024))
+      end
+    end
+    path
   end
 
   def with_metadata_suggester_stub(capture: nil)

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Tightened image upload validation on both server and client: introduced a shared `ImageAttachmentPolicy` (Rails) and `imageUploadPolicy.ts` (frontend) that limit uploads to JPEG/PNG/WebP/GIF/HEIC at 10 MB or smaller, replaced the permissive `image/*` content-type check (including silently accepting SVG) with the explicit whitelist, blocked oversized/wrong-type uploads in the clothing items controller before the cropper runs and in the temporary AI image-variant endpoints, and surfaced inline friendly errors in the create/edit item file pickers so users see the problem immediately instead of waiting for a backend round-trip.
 - Added Kaminari-backed pagination to the admin users index (`GET /users?page=&per_page=`) returning a `{ users, meta }` envelope, surfaced a paginated grid with Previous/Next/page controls on the admin users directory, and switched the directory cards to a `clothing_items_count` field so per-user item arrays no longer ship with the index payload.
 - Expanded `db/seeds.rb` to a development-scale dataset (~1,050 users, ~5,200 clothing items, ~2,100 outfits with linked items) so pagination and large-list performance are visible during local development.
 - Renamed the app to Curated Closet, added branded sign-in/logo assets plus a new favicon, refreshed the home sign-in copy, redirected signed-in visits to `/` back to `/closet`, and switched signed-out auth fallbacks to a single standalone sign-in screen without the main app shell.

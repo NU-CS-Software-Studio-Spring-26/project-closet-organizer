@@ -2,6 +2,7 @@ import { RefObject } from "react";
 import { Upload } from "lucide-react";
 import { PrimitiveButton } from "./primitives/PrimitiveButton";
 import { PrimitiveText } from "./primitives/PrimitiveText";
+import { IMAGE_FILE_INPUT_ACCEPT } from "../lib/imageUploadPolicy";
 
 interface ItemPhotoFieldProps {
   description?: string;
@@ -35,7 +36,7 @@ export function ItemPhotoField({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept={IMAGE_FILE_INPUT_ACCEPT}
         onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
         className="sr-only"
       />

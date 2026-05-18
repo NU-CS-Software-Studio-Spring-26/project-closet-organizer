@@ -24,6 +24,10 @@ import { ItemMetadataPanel } from "./ItemMetadataPanel";
 import { PrimitiveButton } from "./primitives/PrimitiveButton";
 import { PrimitiveText } from "./primitives/PrimitiveText";
 import { useItemPhotoState } from "../lib/useItemPhotoState";
+import {
+  IMAGE_FILE_INPUT_ACCEPT,
+  validateImageFile,
+} from "../lib/imageUploadPolicy";
 
 interface ItemDetailPageProps {
   itemId: number;
@@ -95,10 +99,21 @@ export function ItemDetailPage({
     : "";
 
   function handleEditImageFileChange(file: File | null) {
-    if (file) {
-      originalUploadedPhotoRef.current = file;
-      photoState.updateSelectedFile(file);
+    if (!file) {
+      return;
     }
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setErrorMessage(validationError.message);
+      if (photoState.inputRef.current) {
+        photoState.inputRef.current.value = "";
+      }
+      return;
+    }
+
+    originalUploadedPhotoRef.current = file;
+    photoState.updateSelectedFile(file);
   }
 
   function handlePreviewClear() {
@@ -319,7 +334,7 @@ export function ItemDetailPage({
       <input
         ref={photoState.inputRef}
         type="file"
-        accept="image/*"
+        accept={IMAGE_FILE_INPUT_ACCEPT}
         onChange={(event) => handleEditImageFileChange(event.target.files?.[0] ?? null)}
         className="sr-only"
       />

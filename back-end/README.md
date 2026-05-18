@@ -93,6 +93,7 @@ Notes:
 - `/` resolves to `clothing_items#index` inside the JSON scope.
 - HTML browser requests for SPA routes fall back to the frontend shell.
 - `ApplicationController` returns `404` JSON for missing records and `422` JSON for validation failures.
+- Image uploads (clothing item photos, outfit upload source photos, and AI image-variant previews) must be JPEG, PNG, WebP, GIF, or HEIC and 10 MB or smaller. The rules live in `app/models/concerns/image_attachment_policy.rb` and are enforced from the `ClothingItem` and `OutfitUpload` models, the clothing items controller (before cropping), and the image variants controller (before AI calls).
 - `GET /users` is paginated via Kaminari. It accepts `page` and `per_page` query params (default 24, max 100) and returns `{ users: [...], meta: { page, per_page, total_pages, total_count } }`. The index payload omits each user's `clothing_items` array and only includes a `clothing_items_count` field; per-user `GET /users/:id` still returns the full items array.
 
 ## Important Internal Files
