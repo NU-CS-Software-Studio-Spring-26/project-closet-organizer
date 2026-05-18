@@ -79,6 +79,7 @@ Routes are coordinated in `src/app/App.tsx` and parsed in `src/app/lib/routes.ts
 - The item editor can request AI metadata suggestions for type, name, brand, and tags, and can request cleaned item imagery for catalog-style presentation.
 - Image-based item creation submits an outfit photo to `POST /outfit_uploads`, renders detections, and supports promoting a reviewed detection into a closet item.
 - Outfit drafts are stored per user in local storage through `useOutfitDraftState`.
+- Image upload pickers validate the selected file with `src/app/lib/imageUploadPolicy.ts` before submitting — only JPEG, PNG, WebP, GIF, and HEIC up to 10 MB are accepted, matching the backend `ImageAttachmentPolicy`.
 
 ## Important Source Files
 

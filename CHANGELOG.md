@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Tightened image upload validation on both server and client: introduced a shared `ImageAttachmentPolicy` (Rails) and `imageUploadPolicy.ts` (frontend) that limit uploads to JPEG/PNG/WebP/GIF/HEIC at 10 MB or smaller, replaced the permissive `image/*` content-type check (including silently accepting SVG) with the explicit whitelist, blocked oversized/wrong-type uploads in the clothing items controller before the cropper runs and in the temporary AI image-variant endpoints, and surfaced inline friendly errors in the create/edit item file pickers so users see the problem immediately instead of waiting for a backend round-trip.
 - Renamed the app to Curated Closet, added branded sign-in/logo assets plus a new favicon, refreshed the home sign-in copy, redirected signed-in visits to `/` back to `/closet`, and switched signed-out auth fallbacks to a single standalone sign-in screen without the main app shell.
 - Added persisted clothing item categories and detection-source links so AI-detected item types survive into saved closet records.
 - Added AI metadata suggestion endpoints for clothing items, outfit detections, and temporary image previews, and passed richer metadata/reference-image context into AI clean-image generation.

@@ -92,6 +92,7 @@ Notes:
 - `/` resolves to `clothing_items#index` inside the JSON scope.
 - HTML browser requests for SPA routes fall back to the frontend shell.
 - `ApplicationController` returns `404` JSON for missing records and `422` JSON for validation failures.
+- Image uploads (clothing item photos, outfit upload source photos, and AI image-variant previews) must be JPEG, PNG, WebP, GIF, or HEIC and 10 MB or smaller. The rules live in `app/models/concerns/image_attachment_policy.rb` and are enforced from the `ClothingItem` and `OutfitUpload` models, the clothing items controller (before cropping), and the image variants controller (before AI calls).
 
 ## Important Internal Files
 
