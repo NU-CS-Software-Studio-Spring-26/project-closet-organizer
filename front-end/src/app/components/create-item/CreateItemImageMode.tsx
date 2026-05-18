@@ -18,6 +18,7 @@ import { ItemMetadataPanel } from "../ItemMetadataPanel";
 import { PrimitiveButton } from "../primitives/PrimitiveButton";
 import { PrimitiveConfirmationDialog } from "../primitives/PrimitiveConfirmationDialog";
 import { UploadWorkspace } from "../UploadWorkspace";
+import { IMAGE_FILE_INPUT_ACCEPT } from "../../lib/imageUploadPolicy";
 import { DetectionPreviewImage } from "./DetectionPreview";
 import { DetectionThumbnailStrip } from "./DetectionThumbnailStrip";
 
@@ -248,7 +249,7 @@ export function CreateItemImageMode({
         <input
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept={IMAGE_FILE_INPUT_ACCEPT}
           onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
           className="sr-only"
         />

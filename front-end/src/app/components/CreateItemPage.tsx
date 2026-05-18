@@ -33,6 +33,10 @@ import { PrimitiveButton } from "./primitives/PrimitiveButton";
 import { PrimitiveConfirmationDialog } from "./primitives/PrimitiveConfirmationDialog";
 import { PrimitiveText } from "./primitives/PrimitiveText";
 import { useItemPhotoState } from "../lib/useItemPhotoState";
+import {
+  IMAGE_FILE_INPUT_ACCEPT,
+  validateImageFile,
+} from "../lib/imageUploadPolicy";
 
 interface CreateItemPageProps {
   userId: number | null;
@@ -210,6 +214,15 @@ export function CreateItemPage({
 
   function handleImageFileChange(file: File | null) {
     if (!file) {
+      return;
+    }
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setErrorMessage(validationError.message);
+      if (photoState.inputRef.current) {
+        photoState.inputRef.current.value = "";
+      }
       return;
     }
 
@@ -599,7 +612,7 @@ export function CreateItemPage({
       <input
         ref={photoState.inputRef}
         type="file"
-        accept="image/*"
+        accept={IMAGE_FILE_INPUT_ACCEPT}
         onChange={(event) => handleImageFileChange(event.target.files?.[0] ?? null)}
         className="sr-only"
       />
