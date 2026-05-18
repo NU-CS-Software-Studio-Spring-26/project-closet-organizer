@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Save, Trash2, Upload } from "lucide-react";
 import {
   buildItemPreviewMetadata,
+  purchasePriceForPreview,
   createCleanPreviewFile,
   ClothingItem,
   ClothingItemFormValues,
@@ -113,8 +114,16 @@ export function ItemDetailPage({
   }, [formValues, item, photoState.removeExisting, photoState.selectedFile]);
 
   const previewName = formValues?.name.trim() || item?.name?.trim() || "Untitled Item";
+  const previewPurchase = formValues
+    ? purchasePriceForPreview(formValues.purchasePrice, formValues.purchaseCurrency)
+    : null;
   const previewMetadata = formValues
-    ? buildItemPreviewMetadata(formValues.size, parseTagInput(formValues.tags))
+    ? buildItemPreviewMetadata(
+        formValues.size,
+        parseTagInput(formValues.tags),
+        previewPurchase?.amount,
+        previewPurchase?.currency,
+      )
     : "";
 
   function handleEditImageFileChange(file: File | null) {

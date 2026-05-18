@@ -2,6 +2,7 @@ import { RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, LoaderCircle, RotateCcw, Sparkles, Upload } from "lucide-react";
 import {
   buildItemPreviewMetadata,
+  purchasePriceForPreview,
   ClothingItemFormValues,
   formatTagLabel,
   OutfitDetection,
@@ -135,8 +136,16 @@ export function CreateItemImageMode({
   const focusedSuggestedName = focusedDraft?.name.trim()
     || detailsDetection?.suggested_name?.trim()
     || (detailsDetection ? titleize(detailsDetection.category) : "");
+  const focusedPreviewPurchase = focusedDraft
+    ? purchasePriceForPreview(focusedDraft.purchasePrice, focusedDraft.purchaseCurrency)
+    : null;
   const focusedPreviewMetadata = focusedDraft
-    ? buildItemPreviewMetadata(focusedDraft.size, parseTagInput(focusedDraft.tags))
+    ? buildItemPreviewMetadata(
+        focusedDraft.size,
+        parseTagInput(focusedDraft.tags),
+        focusedPreviewPurchase?.amount,
+        focusedPreviewPurchase?.currency,
+      )
     : "";
   const focusedIsSelected = detailsDetection
     ? selectedDetectionIds.includes(detailsDetection.id)

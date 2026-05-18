@@ -1,4 +1,7 @@
 class ClothingItem < ApplicationRecord
+  SUPPORTED_PURCHASE_CURRENCIES = %w[USD EUR GBP CAD AUD JPY CHF MXN INR CNY].freeze
+  DEFAULT_PURCHASE_CURRENCY = "USD"
+
   belongs_to :user
   has_many :outfit_items, dependent: :destroy
   has_many :outfits, through: :outfit_items
@@ -8,6 +11,7 @@ class ClothingItem < ApplicationRecord
   before_validation :normalize_category
   before_validation :normalize_tags
   before_validation :normalize_brand
+  before_validation :normalize_purchase_currency
 
   enum :size, {
     xs: 0,
@@ -28,6 +32,15 @@ class ClothingItem < ApplicationRecord
   validates :brand, length: { maximum: InputLengthPolicy::MAX_CLOTHING_ITEM_BRAND }, allow_blank: true
   validates :category, length: { maximum: InputLengthPolicy::MAX_CLOTHING_ITEM_CATEGORY }, allow_blank: true
   validates :size, presence: true
+  validates :purchase_price,
+    numericality: {
+      greater_than_or_equal_to: 0,
+      less_than: 1_000_000
+    },
+    allow_nil: true
+  validates :purchase_currency,
+    inclusion: { in: SUPPORTED_PURCHASE_CURRENCIES },
+    allow_nil: true
   validate :tags_meet_length_policy
   validate :photo_must_be_an_image
   validate :photo_size_within_limit
@@ -74,5 +87,16 @@ class ClothingItem < ApplicationRecord
 
   def normalize_category
     self.category = category.to_s.strip.downcase.presence
+  end
+
+  def normalize_purchase_currency
+    code = purchase_currency.to_s.strip.upcase.presence
+
+    if purchase_price.blank?
+      self.purchase_currency = nil
+      return
+    end
+
+    self.purchase_currency = code || DEFAULT_PURCHASE_CURRENCY
   end
 end

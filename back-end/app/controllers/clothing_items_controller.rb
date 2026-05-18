@@ -73,7 +73,16 @@ class ClothingItemsController < ApplicationController
   end
 
   def clothing_item_attributes
-    base_params = params.require(:clothing_item).permit(:name, :category, :size, :date, :user_id, :brand)
+    base_params = params.require(:clothing_item).permit(
+      :name,
+      :category,
+      :size,
+      :date,
+      :user_id,
+      :brand,
+      :purchase_price,
+      :purchase_currency
+    )
     tag_params = params.require(:clothing_item).permit(tags: [])[:tags]
 
     base_params.merge(

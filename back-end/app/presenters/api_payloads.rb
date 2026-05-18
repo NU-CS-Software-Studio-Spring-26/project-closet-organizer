@@ -26,6 +26,8 @@ class ApiPayloads
         name
         category
         brand
+        purchase_price
+        purchase_currency
         date
         user_id
         created_at

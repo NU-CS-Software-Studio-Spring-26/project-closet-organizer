@@ -24,6 +24,7 @@ import {
   MAX_CLOTHING_ITEM_NAME,
   MAX_TAG_LENGTH,
 } from "../lib/inputLengthPolicy";
+import { PURCHASE_CURRENCY_OPTIONS } from "../lib/purchaseCurrencies";
 import { Input } from "./ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
@@ -271,6 +272,56 @@ export function ItemMetadataFields({
           </span>
         ) : null}
       </label>
+
+      <label className="space-y-2" htmlFor={fieldId("purchasePrice")}>
+        <PrimitiveText as="span" variant="label">
+          Purchase price
+        </PrimitiveText>
+        <Input
+          id={fieldId("purchasePrice")}
+          type="text"
+          inputMode="decimal"
+          value={values.purchasePrice}
+          onChange={(event) => updateField("purchasePrice", event.target.value)}
+          placeholder="Optional, e.g. 29.99"
+          aria-invalid={Boolean(errors.purchasePrice)}
+          aria-describedby={errors.purchasePrice ? `${fieldId("purchasePrice")}-error` : undefined}
+          className="h-11 px-4 py-3"
+        />
+        <FieldError message={errors.purchasePrice} />
+        {errors.purchasePrice ? (
+          <span id={`${fieldId("purchasePrice")}-error`} className="sr-only">
+            {errors.purchasePrice}
+          </span>
+        ) : null}
+      </label>
+
+      <div className="space-y-2">
+        <PrimitiveText as="span" variant="label" id={`${fieldId("purchaseCurrency")}-label`}>
+          Currency
+        </PrimitiveText>
+        <PrimitiveSelect
+          value={values.purchaseCurrency}
+          onValueChange={(value) =>
+            updateField("purchaseCurrency", value as ClothingItemFormValues["purchaseCurrency"])
+          }
+        >
+          <PrimitiveSelectTrigger
+            id={fieldId("purchaseCurrency")}
+            aria-labelledby={`${fieldId("purchaseCurrency")}-label`}
+            className="h-11 px-4 py-3"
+          >
+            <PrimitiveSelectValue placeholder="Currency" />
+          </PrimitiveSelectTrigger>
+          <PrimitiveSelectContent>
+            {PURCHASE_CURRENCY_OPTIONS.map((option) => (
+              <PrimitiveSelectItem key={option.code} value={option.code}>
+                {option.label}
+              </PrimitiveSelectItem>
+            ))}
+          </PrimitiveSelectContent>
+        </PrimitiveSelect>
+      </div>
 
       <label className="space-y-2 sm:col-span-2" htmlFor={fieldId("brand")}>
         <LabelWithTooltip

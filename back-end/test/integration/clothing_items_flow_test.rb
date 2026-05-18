@@ -31,7 +31,9 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
           size: "large",
           date: "2026-04-20",
           tags: [ "wool", "camel", "tailored", "studio north" ],
-          brand: "Studio North"
+          brand: "Studio North",
+          purchase_price: "89.50",
+          purchase_currency: "EUR"
         }
       }, headers: auth_headers(@user), as: :json
     end
@@ -42,6 +44,21 @@ class ClothingItemsFlowTest < ActionDispatch::IntegrationTest
     assert_equal "large", response_json["size"]
     assert_equal "Studio North", response_json["brand"]
     assert_equal [ "wool", "camel", "tailored", "studio north" ], response_json["tags"]
+    assert_in_delta 89.5, response_json["purchase_price"].to_f, 0.001
+    assert_equal "EUR", response_json["purchase_currency"]
+  end
+
+  test "rejects invalid purchase price" do
+    post clothing_items_url, params: {
+      clothing_item: {
+        name: "Overpriced Tee",
+        user_id: @user.id,
+        purchase_price: "-5"
+      }
+    }, headers: auth_headers(@user), as: :json
+
+    assert_response :unprocessable_entity
+    assert_includes response_json["errors"].join(" "), "Purchase price"
   end
 
   test "defaults size to na when omitted" do

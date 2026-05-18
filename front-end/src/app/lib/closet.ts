@@ -1,4 +1,9 @@
 import { requestJson, requestJsonOrNull, requestVoid } from "./api";
+import {
+  DEFAULT_PURCHASE_CURRENCY,
+  normalizePurchaseCurrency,
+  type PurchaseCurrencyCode,
+} from "./purchaseCurrencies";
 
 const LOCAL_BACKEND_BASE_URL = "http://127.0.0.1:3000";
 
@@ -41,6 +46,8 @@ export interface ClothingItem {
   brand?: string | null;
   size: string;
   date: string | null;
+  purchase_price?: number | null;
+  purchase_currency?: PurchaseCurrencyCode | null;
   user_id: number;
   created_at?: string;
   updated_at?: string;
@@ -147,6 +154,8 @@ export interface ClothingItemFormValues {
   brand: string;
   size: string;
   date: string;
+  purchasePrice: string;
+  purchaseCurrency: PurchaseCurrencyCode;
   tags: string;
 }
 
@@ -277,8 +286,69 @@ export function emptyClothingItemFormValues(): ClothingItemFormValues {
     brand: "",
     size: "na",
     date: "",
+    purchasePrice: "",
+    purchaseCurrency: DEFAULT_PURCHASE_CURRENCY,
     tags: "",
   };
+}
+
+export function parsePurchasePriceInput(value: string): { invalid: boolean; value: number | null } {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return { invalid: false, value: null };
+  }
+
+  const normalized = trimmed.replace(/[$,\s]/g, "");
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
+    return { invalid: true, value: null };
+  }
+
+  const amount = Number(normalized);
+  if (!Number.isFinite(amount)) {
+    return { invalid: true, value: null };
+  }
+
+  return { invalid: false, value: Math.round(amount * 100) / 100 };
+}
+
+export function formatPurchasePriceForInput(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(Number(value))) {
+    return "";
+  }
+
+  return Number(value).toFixed(2);
+}
+
+export function formatPurchasePriceDisplay(
+  value: number | null | undefined,
+  currency: PurchaseCurrencyCode = DEFAULT_PURCHASE_CURRENCY,
+) {
+  if (value == null || !Number.isFinite(Number(value))) {
+    return null;
+  }
+
+  try {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(Number(value));
+  } catch {
+    return `${currency} ${Number(value).toFixed(2)}`;
+  }
+}
+
+export function purchasePriceForPreview(purchasePrice: string, purchaseCurrency: string) {
+  const parsed = parsePurchasePriceInput(purchasePrice);
+  return {
+    amount: parsed.invalid ? null : parsed.value,
+    currency: normalizePurchaseCurrency(purchaseCurrency),
+  };
+}
+
+function formatPurchasePriceForApi(purchasePrice: string) {
+  const parsed = parsePurchasePriceInput(purchasePrice);
+  if (parsed.invalid || parsed.value == null) {
+    return "";
+  }
+
+  return parsed.value.toFixed(2);
 }
 
 export function titleize(value: string) {
@@ -334,9 +404,15 @@ export function formatDisplaySize(size: string) {
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
-export function buildItemPreviewMetadata(size: string, tags: string[]) {
+export function buildItemPreviewMetadata(
+  size: string,
+  tags: string[],
+  purchasePrice?: number | null,
+  purchaseCurrency: PurchaseCurrencyCode = DEFAULT_PURCHASE_CURRENCY,
+) {
   const visibleTags = tags.slice(0, 3);
-  return [formatDisplaySize(size), ...visibleTags.slice(1).map(formatTagLabel)]
+  const priceLabel = formatPurchasePriceDisplay(purchasePrice, purchaseCurrency);
+  return [formatDisplaySize(size), priceLabel, ...visibleTags.slice(1).map(formatTagLabel)]
     .filter(Boolean)
     .join(" · ");
 }
@@ -373,6 +449,8 @@ export function toClothingItemFormValues(item: ClothingItem): ClothingItemFormVa
     brand: item.brand?.trim() ?? "",
     size: item.size,
     date: toDateInputValue(item.date),
+    purchasePrice: formatPurchasePriceForInput(item.purchase_price),
+    purchaseCurrency: normalizePurchaseCurrency(item.purchase_currency),
     tags: formatTagInput(item.tags),
   };
 }
@@ -386,6 +464,8 @@ export function toClothingItemFormValuesFromDetection(
     brand: "",
     size: "na",
     date: "",
+    purchasePrice: "",
+    purchaseCurrency: DEFAULT_PURCHASE_CURRENCY,
     tags: formatTagInput([
       detection.details.dominant_color?.trim() ?? "",
       detection.details.material_guess?.trim() ?? "",
@@ -688,11 +768,24 @@ function normalizeCategoryValue(rawCategory: unknown) {
   return typeof rawCategory === "string" ? rawCategory.trim().toLowerCase() : "";
 }
 
+function normalizePurchasePrice(value: unknown) {
+  if (value == null || value === "") {
+    return null;
+  }
+
+  const amount = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(amount) ? amount : null;
+}
+
 function normalizeClothingItemPayload(item: ClothingItem): ClothingItem {
   return {
     ...item,
     category: normalizeCategoryValue(item.category) || null,
     brand: item.brand?.trim() ? item.brand.trim() : null,
+    purchase_price: normalizePurchasePrice(item.purchase_price),
+    purchase_currency: item.purchase_currency
+      ? normalizePurchaseCurrency(item.purchase_currency)
+      : null,
     tags: normalizeTagList((item as ClothingItem & { tags?: unknown }).tags),
   };
 }
@@ -760,6 +853,11 @@ function buildClothingItemFormData(
   formData.append("clothing_item[user_id]", String(userId));
   formData.append("clothing_item[size]", values.size);
   formData.append("clothing_item[date]", values.date);
+  formData.append("clothing_item[purchase_price]", formatPurchasePriceForApi(values.purchasePrice));
+  formData.append(
+    "clothing_item[purchase_currency]",
+    formatPurchasePriceForApi(values.purchasePrice) ? values.purchaseCurrency : "",
+  );
   formData.append("clothing_item[brand]", values.brand.trim());
   parseTagInput(values.tags).forEach((tag) => {
     formData.append("clothing_item[tags][]", tag);

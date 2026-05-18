@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { ArrowLeft, Plus, Upload } from "lucide-react";
 import {
   buildItemPreviewMetadata,
+  purchasePriceForPreview,
   ClothingItem,
   ClothingItemFormValues,
   createClothingItem,
@@ -592,7 +593,16 @@ export function CreateItemPage({
   }
 
   const previewName = formValues.name.trim() || "Untitled Item";
-  const previewMetadata = buildItemPreviewMetadata(formValues.size, parseTagInput(formValues.tags));
+  const previewPurchase = purchasePriceForPreview(
+    formValues.purchasePrice,
+    formValues.purchaseCurrency,
+  );
+  const previewMetadata = buildItemPreviewMetadata(
+    formValues.size,
+    parseTagInput(formValues.tags),
+    previewPurchase.amount,
+    previewPurchase.currency,
+  );
 
   return (
     <ItemEditorWorkspace

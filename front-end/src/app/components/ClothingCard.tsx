@@ -7,11 +7,14 @@ import {
   buildItemPreviewMetadata,
   formatTagLabel,
 } from "../lib/closet";
+import { DEFAULT_PURCHASE_CURRENCY, normalizePurchaseCurrency } from "../lib/purchaseCurrencies";
 
 interface ClothingCardProps {
   id: number;
   name: string;
   size: string;
+  purchase_price?: number | null;
+  purchase_currency?: string | null;
   tags: string[];
   image_url?: string | null;
   index: number;
@@ -25,6 +28,8 @@ export function ClothingCard({
   id,
   name,
   size,
+  purchase_price,
+  purchase_currency,
   tags,
   image_url,
   index,
@@ -34,7 +39,12 @@ export function ClothingCard({
   onRemoveFromOutfit,
 }: ClothingCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const itemMetadata = buildItemPreviewMetadata(size, tags);
+  const itemMetadata = buildItemPreviewMetadata(
+    size,
+    tags,
+    purchase_price,
+    purchase_currency ? normalizePurchaseCurrency(purchase_currency) : DEFAULT_PURCHASE_CURRENCY,
+  );
   const handleSelect = () => onSelect?.(id);
 
   return (

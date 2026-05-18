@@ -1,4 +1,4 @@
-import { ClothingItem, ClothingItemFormValues } from "./closet";
+import { ClothingItem, ClothingItemFormValues, parsePurchasePriceInput } from "./closet";
 
 export type ClothingItemFormErrors = Partial<Record<keyof ClothingItemFormValues, string>>;
 
@@ -26,6 +26,15 @@ export function validateClothingItemForm(values: ClothingItemFormValues): Clothi
     }
   }
 
+  if (values.purchasePrice.trim()) {
+    const parsed = parsePurchasePriceInput(values.purchasePrice);
+    if (parsed.invalid) {
+      errors.purchasePrice = "Enter a valid price (for example, 29.99).";
+    } else if (parsed.value != null && parsed.value >= 1_000_000) {
+      errors.purchasePrice = "Price must be less than $1,000,000.";
+    }
+  }
+
   return errors;
 }
 
@@ -34,7 +43,16 @@ export function hasClothingItemFormErrors(errors: ClothingItemFormErrors) {
 }
 
 export function firstInvalidClothingItemField(errors: ClothingItemFormErrors) {
-  const order: (keyof ClothingItemFormValues)[] = ["category", "name", "size", "date", "brand", "tags"];
+  const order: (keyof ClothingItemFormValues)[] = [
+    "category",
+    "name",
+    "size",
+    "date",
+    "purchasePrice",
+    "purchaseCurrency",
+    "brand",
+    "tags",
+  ];
   return order.find((field) => errors[field]) ?? null;
 }
 
