@@ -10,6 +10,16 @@ class ImageVariantsController < ApplicationController
       return
     end
 
+    if (error_message = image_policy_error_for(source_photo))
+      render json: { error: error_message }, status: :unprocessable_content
+      return
+    end
+
+    if (reference_error = first_reference_photo_policy_error)
+      render json: { error: reference_error }, status: :unprocessable_content
+      return
+    end
+
     render json: OpenrouterMetadataSuggester.call(
       source_photo,
       category_hint: params.dig(:image_variant, :category_hint),
@@ -24,6 +34,16 @@ class ImageVariantsController < ApplicationController
     source_photo = params.dig(:image_variant, :source_photo)
     if source_photo.blank?
       render json: { error: "Select an image before using the AI cleaner." }, status: :unprocessable_content
+      return
+    end
+
+    if (error_message = image_policy_error_for(source_photo))
+      render json: { error: error_message }, status: :unprocessable_content
+      return
+    end
+
+    if (reference_error = first_reference_photo_policy_error)
+      render json: { error: reference_error }, status: :unprocessable_content
       return
     end
 
@@ -56,5 +76,18 @@ class ImageVariantsController < ApplicationController
   def image_variant_reference_photos
     original_source_photo = params.dig(:image_variant, :original_source_photo)
     original_source_photo.present? ? [ original_source_photo ] : []
+  end
+
+  def image_policy_error_for(uploaded_file)
+    code, message = ImageAttachmentPolicy.validate_uploaded_file(uploaded_file)
+    code ? message : nil
+  end
+
+  def first_reference_photo_policy_error
+    image_variant_reference_photos.each do |reference|
+      error = image_policy_error_for(reference)
+      return error if error
+    end
+    nil
   end
 end

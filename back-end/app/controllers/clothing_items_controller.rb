@@ -114,6 +114,12 @@ class ClothingItemsController < ApplicationController
     uploaded_photo = params.dig(:clothing_item, :photo)
     return if uploaded_photo.blank?
 
+    if (policy_error = ImageAttachmentPolicy.validate_uploaded_file(uploaded_photo))
+      _code, message = policy_error
+      clothing_item.errors.add(:photo, message.to_s.sub(/\AImage\s+/i, ""))
+      return
+    end
+
     bounding_box = normalized_crop_box
     return if clothing_item.errors.any?
 

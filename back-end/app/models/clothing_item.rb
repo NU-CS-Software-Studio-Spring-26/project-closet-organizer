@@ -26,8 +26,7 @@ class ClothingItem < ApplicationRecord
 
   validates :name, presence: true
   validates :size, presence: true
-  validate :photo_must_be_an_image
-  validate :photo_size_within_limit
+  validate :photo_attachment_meets_policy
 
   def display_photo_attachment
     cleaned_photo.attached? ? cleaned_photo : photo
@@ -39,18 +38,8 @@ class ClothingItem < ApplicationRecord
 
   private
 
-  def photo_must_be_an_image
-    return unless photo.attached?
-    return if photo.blob.content_type&.start_with?("image/")
-
-    errors.add(:photo, "must be an image")
-  end
-
-  def photo_size_within_limit
-    return unless photo.attached?
-    return if photo.blob.byte_size <= 10.megabytes
-
-    errors.add(:photo, "must be 10 MB or smaller")
+  def photo_attachment_meets_policy
+    ImageAttachmentPolicy.validate_attached(self, :photo, photo)
   end
 
   def normalize_tags
