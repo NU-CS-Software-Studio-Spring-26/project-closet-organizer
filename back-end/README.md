@@ -12,6 +12,7 @@ Rails 8 JSON backend for Curated Closet.
 - `has_secure_password`
 - OmniAuth Google OAuth 2
 - Active Storage for uploaded and generated images
+- Kaminari for paginated index endpoints
 
 ## What The Backend Handles
 
@@ -93,6 +94,7 @@ Notes:
 - HTML browser requests for SPA routes fall back to the frontend shell.
 - `ApplicationController` returns `404` JSON for missing records and `422` JSON for validation failures.
 - Image uploads (clothing item photos, outfit upload source photos, and AI image-variant previews) must be JPEG, PNG, WebP, GIF, or HEIC and 10 MB or smaller. The rules live in `app/models/concerns/image_attachment_policy.rb` and are enforced from the `ClothingItem` and `OutfitUpload` models, the clothing items controller (before cropping), and the image variants controller (before AI calls).
+- `GET /users` is paginated via Kaminari. It accepts `page` and `per_page` query params (default 24, max 100) and returns `{ users: [...], meta: { page, per_page, total_pages, total_count } }`. The index payload omits each user's `clothing_items` array and only includes a `clothing_items_count` field; per-user `GET /users/:id` still returns the full items array.
 
 ## Important Internal Files
 
@@ -208,16 +210,23 @@ See [back-end/.env.example](./.env.example) for expected variables.
 
 ## Seeds
 
-`db/seeds.rb` currently creates:
+`db/seeds.rb` builds a development-scale dataset so pagination and large-list performance are visible locally:
 
-- one Google-backed admin user: `annabel_goldman`
-- email `annabelgoldman2025@u.northwestern.edu`
-- a 20-item demo closet with realistic wardrobe tags
+- preset Google-backed admin user `annabel_goldman` (email `annabelgoldman2025@u.northwestern.edu`) with a 20-item demo closet and a few sample outfits
+- ~1,050 additional generated users (provider `"seed"`, shared password `password`) with realistic names and preferred styles
+- ~5,200 total clothing items distributed across users using a long-tail distribution (some users empty, most with a handful, a few with many)
+- ~2,100 total outfits, each linked to 2–5 of its owner's items
 
 Load seeds with:
 
 ```bash
 bin/rails db:seed
+```
+
+To reset and reseed:
+
+```bash
+bin/rails db:reset
 ```
 
 ## Tests And Quality Checks
