@@ -27,12 +27,14 @@ class ImageVariantsController < ApplicationController
       return
     end
 
+    temporary_files = ManagedTempfiles.new
     generated = OpenrouterImageCleaner.call(
       source_photo,
       reference_photos: image_variant_reference_photos,
-      metadata_context: ai_metadata_context_from_params(params[:ai_context])
+      metadata_context: ai_metadata_context_from_params(params[:ai_context]),
+      prompt_context: {}
     )
-    tempfile = generated.fetch(:tempfile)
+    tempfile = temporary_files.track(generated.fetch(:tempfile))
     tempfile.rewind
 
     render json: {
@@ -43,7 +45,34 @@ class ImageVariantsController < ApplicationController
   rescue StandardError => error
     render json: { error: error.message }, status: :unprocessable_content
   ensure
-    tempfile&.close!
+    temporary_files&.close_all
+  end
+
+  def transparent_preview
+    source_photo = params.dig(:image_variant, :source_photo)
+    if source_photo.blank?
+      render json: { error: "Run AI clean image before making a transparent PNG." }, status: :unprocessable_content
+      return
+    end
+
+    temporary_files = ManagedTempfiles.new
+    generated = TransparentPngVariantGenerator.call(
+      source_photo,
+      filename_root: File.basename(source_photo.original_filename.to_s, ".*").presence || "item-clean",
+      temporary_files: temporary_files
+    )
+    tempfile = temporary_files.track(generated.fetch(:tempfile))
+    tempfile.rewind
+
+    render json: {
+      filename: generated.fetch(:filename),
+      content_type: generated.fetch(:content_type),
+      data_url: data_url_for(tempfile, generated.fetch(:content_type))
+    }
+  rescue StandardError => error
+    render json: { error: error.message }, status: :unprocessable_content
+  ensure
+    temporary_files&.close_all
   end
 
   private

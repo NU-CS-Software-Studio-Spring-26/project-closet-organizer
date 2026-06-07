@@ -1,5 +1,9 @@
 import type { ReactNode } from "react";
 import { motion } from "motion/react";
+import type {
+  ExpandedImageEditorApplyContext,
+  ExpandedImageEditorImageActions,
+} from "./ExpandedImageEditor";
 import { ItemHeroPreview } from "./ItemHeroPreview";
 
 interface UploadWorkspaceProps {
@@ -12,11 +16,17 @@ interface UploadWorkspaceProps {
   previewAriaLabel?: string;
   previewBackgroundDecoration?: ReactNode;
   previewMedia?: ReactNode;
+  previewEditor?: {
+    getEditableFile: () => Promise<File | null>;
+    imageActions?: ExpandedImageEditorImageActions;
+    onApply: (file: File, context: ExpandedImageEditorApplyContext) => Promise<void> | void;
+  };
   isPreviewProcessing?: boolean;
   previewTopAction?: ReactNode;
   previewLabel: string;
   previewPrimaryDetail: string;
   previewSecondaryDetail?: string | null;
+  previewFooter?: ReactNode;
   previewTitle: string;
 }
 
@@ -30,16 +40,18 @@ export function UploadWorkspace({
   previewAriaLabel,
   previewBackgroundDecoration,
   previewMedia,
+  previewEditor,
   isPreviewProcessing,
   previewTopAction,
   previewLabel,
   previewPrimaryDetail,
   previewSecondaryDetail,
+  previewFooter,
   previewTitle,
 }: UploadWorkspaceProps) {
   return (
-    <div className="grid gap-10 lg:min-h-[min(46rem,calc(100vh-8rem))] lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-stretch">
-      <div className="lg:h-full">
+    <div className="grid gap-10 lg:min-h-[min(46rem,calc(100vh-8rem))] lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start">
+      <div className="space-y-4 lg:self-start">
         <ItemHeroPreview
           expandedPreview={expandedPreview}
           imageUrl={imageUrl}
@@ -50,12 +62,14 @@ export function UploadWorkspace({
           previewAriaLabel={previewAriaLabel}
           previewBackgroundDecoration={previewBackgroundDecoration}
           previewMedia={previewMedia}
+          previewEditor={previewEditor}
           isPreviewProcessing={isPreviewProcessing}
           previewTopAction={previewTopAction}
           primaryDetail={previewPrimaryDetail}
           secondaryDetail={previewSecondaryDetail}
           title={previewTitle}
         />
+        {previewFooter}
       </div>
 
       <motion.div

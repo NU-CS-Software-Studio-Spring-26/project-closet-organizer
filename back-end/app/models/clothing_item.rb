@@ -37,7 +37,14 @@ class ClothingItem < ApplicationRecord
   end
 
   def source_photo_for_cleaning
-    display_photo_attachment
+    return photo if photo.attached?
+    return cleaned_photo if cleaned_photo.attached?
+
+    nil
+  end
+
+  def source_photo_for_transparent_png
+    cleaned_photo.attached? ? cleaned_photo : nil
   end
 
   private

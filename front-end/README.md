@@ -36,6 +36,14 @@ Default dev URL:
 http://127.0.0.1:5173
 ```
 
+If the default OAuth flow is inconvenient during local browser QA, development also supports a local test-user override by visiting a route like:
+
+```text
+http://127.0.0.1:5173/items/new?userId=1&mode=manual&test_user_id=1
+```
+
+The frontend stores that `test_user_id` value in development and sends it as `X-Test-User-Id` on subsequent API and local Active Storage requests.
+
 To run the frontend and backend together, use [start.sh](../start.sh) from the repository root.
 
 ## UI Architecture
@@ -82,6 +90,14 @@ Routes are coordinated in `src/app/App.tsx` and parsed in `src/app/lib/routes.ts
 - Closet filtering, fuzzy search, and sorting are handled through focused helpers in `src/app/lib/closetFilters.ts`. The closet search field shows filter-aware item suggestions while typing (click fills the query, Enter opens the highlighted item).
 - Item create and edit flows send multipart form data so photos can be uploaded, cropped, removed, or sourced from detected outfit-photo regions.
 - The item editor can request AI metadata suggestions for type, name, brand, and tags, and can request cleaned item imagery for catalog-style presentation; the backend now strips the generated white studio background before returning the final cleaned PNG.
+- A staged AI-cleaned result can be submitted as a single `cleaned_photo` attachment while the original uploaded photo remains available separately.
+- Clicking an image preview now opens a larger editor modal where users can crop to freeform or preset aspect ratios, rotate the image left/right/180 degrees, and use a magic-wand erase tool to remove connected background regions before saving that edited file back into the current flow.
+- The expanded image editor now owns its own local image history: crop, wand erase, and in-modal AI actions can be undone/redone inside the modal, while the larger page-level Undo/Redo controls only represent the final saved image change after `Apply edited image`.
+- Existing item editing is now save-less: metadata fields autosave after a short debounce, metadata blur/selection commits save immediately for smaller history steps, direct image changes save immediately, and the metadata header keeps persistent `Undo` / `Redo` controls for reversing persisted changes.
+- The item image workflow is now two clear steps without a hidden working image. `AI clean image` generates the visible catalog-style image shown to the user directly, and the model chooses either a white or dark-charcoal studio background based on the garment in the uploaded image; `Make transparent PNG` then removes that visible backdrop from the cleaned image when the user wants a transparent result.
+- The AI request lifecycle now uses a shared frontend state model (`idle`, `running`, `succeeded`, `failed`, `invalidated`) instead of each editor screen inventing its own booleans. `closet.ts` remains the only wire-aware API layer, while the editor flows use focused hooks to coordinate local AI preview state.
+- The manual create-item editor now records local metadata edits in the same undo stack as image and AI changes, and both the create and edit item workspaces support `Cmd/Ctrl+Z` undo plus `Cmd/Ctrl+Shift+Z` redo.
+- If an AI image request is still processing when the user creates an item, the create flows now warn before proceeding and offer a choice between saving with the current image or creating immediately and auto-attaching the finished result once it completes.
 - Image-based item creation submits an outfit photo to `POST /outfit_uploads`, renders detections, and supports promoting a reviewed detection into a closet item.
 - Outfit drafts are stored per user in local storage through `useOutfitDraftState`.
 
@@ -94,7 +110,13 @@ Routes are coordinated in `src/app/App.tsx` and parsed in `src/app/lib/routes.ts
 - `src/app/lib/api.ts`
   Shared fetch helpers and API error formatting
 - `src/app/lib/closet.ts`
-  Shared types plus frontend-facing API helpers for clothing items, outfits, uploads, clean-image flows, and metadata suggestions
+  Shared types plus frontend-facing API helpers for clothing items, outfits, uploads, clean-image/transparent-PNG preview and save flows, and metadata suggestions
+- `src/app/lib/useAiActionState.ts`
+  Shared AI action status model used by the create-item and saved-item editors
+- `src/app/lib/useManualCreateAiFlow.ts`
+  Manual create-item AI orchestration for clean-image, transparent-PNG, and metadata preview flows, including staged clean preview management and in-flight invalidation
+- `src/app/lib/useDetectionAiFlow.ts`
+  Detection-review AI orchestration for staged cleaned previews and transparent-PNG follow-ups
 - `src/app/lib/outfitCollage.ts`
   Shared default-layout, layer-order, and layout-normalization helpers for saved outfit collages
 - `src/app/lib/outfitCollageRenderMath.ts`
@@ -113,14 +135,16 @@ Routes are coordinated in `src/app/App.tsx` and parsed in `src/app/lib/routes.ts
   Shared async page-loading hook
 - `src/app/lib/useItemPhotoState.ts`
   Shared image selection and preview state
+- `src/app/lib/useUndoRedoShortcuts.ts`
+  Shared keyboard shortcut hook for editor-level undo/redo
 - `src/app/lib/useOutfitDraftState.ts`
   Persistent per-user outfit draft state
 - `src/app/components/ItemEditorWorkspace.tsx`
   Shared add/edit item workspace layout
 - `src/app/components/CreateItemPage.tsx`
-  Manual item creation plus orchestration for the image-based create flow
+  Manual item creation plus image-based create flow composition, now delegating AI request/state orchestration into dedicated hooks
 - `src/app/components/ItemDetailPage.tsx`
-  Edit and delete flow for an existing clothing item
+  Autosaving existing-item editor with persistent Undo/Redo plus split AI clean/transparent actions driven by the shared AI action state model
 - `src/app/components/OutfitCartSheet.tsx`
   Cart-style right-side tray for reviewing selected closet items and creating an outfit directly from the closet page
 - `src/app/components/OutfitCollageCanvas.tsx`

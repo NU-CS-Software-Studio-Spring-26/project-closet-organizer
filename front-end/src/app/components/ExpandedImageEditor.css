@@ -1,0 +1,19 @@
+.expanded-image-editor-crop {
+  display: block;
+  max-height: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.expanded-image-editor-crop .ReactCrop__child-wrapper {
+  overflow: hidden;
+}
+
+.expanded-image-editor-crop .ReactCrop__child-wrapper > img {
+  display: block;
+  height: auto !important;
+  max-height: 100% !important;
+  max-width: 100% !important;
+  object-fit: contain;
+  width: auto !important;
+}

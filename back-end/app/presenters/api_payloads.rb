@@ -8,12 +8,14 @@ class ApiPayloads
       only: %i[id username preferred_style email avatar_url admin created_at updated_at]
     )
 
-    payload["clothing_items_count"] = user.clothing_items.size
-
     if include_items
-      payload["clothing_items"] = user.clothing_items.order(:name).map do |item|
+      clothing_items = clothing_items_for_user_payload(user)
+      payload["clothing_items_count"] = clothing_items.length
+      payload["clothing_items"] = clothing_items.map do |item|
         clothing_item(item, include_user: false)
       end
+    else
+      payload["clothing_items_count"] = clothing_item_count_for_user(user)
     end
 
     payload
@@ -130,5 +132,25 @@ class ApiPayloads
     return unless attachment.attached?
 
     url_helpers.url_for(attachment)
+  end
+
+  def clothing_items_for_user_payload(user)
+    association = user.association(:clothing_items)
+
+    if association.loaded?
+      association.target.sort_by { |item| item.name.to_s.downcase }
+    else
+      user
+        .clothing_items
+        .with_attached_photo
+        .with_attached_cleaned_photo
+        .order(:name)
+        .to_a
+    end
+  end
+
+  def clothing_item_count_for_user(user)
+    association = user.association(:clothing_items)
+    association.loaded? ? association.target.length : user.clothing_items.count
   end
 end

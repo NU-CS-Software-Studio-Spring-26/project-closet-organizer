@@ -8,6 +8,7 @@ require "uri"
 class OpenrouterImageCleaner
   DEFAULT_BASE_URL = "https://openrouter.ai/api/v1".freeze
   DEFAULT_MODEL = "google/gemini-2.5-flash-image".freeze
+  DEFAULT_MAX_TOKENS = 300
 
   def self.call(source_photo, prompt_context: {}, reference_photos: [], metadata_context: {})
     new(
@@ -43,6 +44,7 @@ class OpenrouterImageCleaner
       {
         tempfile: png_tempfile,
         filename: "#{filename_root}-clean.png",
+        filename_root: filename_root,
         content_type: "image/png",
         provider: "openrouter",
         model: configured_model,
@@ -86,6 +88,7 @@ class OpenrouterImageCleaner
     {
       model: model,
       stream: false,
+      max_tokens: configured_max_tokens,
       modalities: %w[image text],
       messages: [
         {
@@ -121,8 +124,17 @@ class OpenrouterImageCleaner
       - Preserve the exact garment identity, including category, silhouette, fit, color, graphics, logos, trim, neckline, sleeve length, and material cues.
       - The output may look like a newly photographed studio product image, but it must still clearly be the same item.
       - Show only one item centered in frame.
-      - Use a clean plain white studio background.
-      - Remove people, body parts, hangers, background clutter, extra garments, props, and shadows that distract from the item.
+      - Use a single clean plain studio background with only one of these two options: paper white or deep charcoal.
+      - If the garment is light-colored, close to white, or needs darker contrast to stay clearly visible, choose a deep charcoal background.
+      - Otherwise choose a paper-white background.
+      - The background must be flat and uniform from edge to edge with no gradient, texture, wrinkles, floor line, spotlight, vignette, or lighting falloff.
+      - Leave a clear visible margin of background around the entire garment so the item remains easy to read on a closet card.
+      - Do not substitute a different background color.
+      - Remove people, body parts, hangers, background clutter, extra garments, and props.
+      - Do not add any cast shadow, floor shadow, contact shadow, drop shadow, glow, vignette, reflection, or halo behind or underneath the garment.
+      - The garment should appear evenly lit and isolated with crisp edges.
+      - Minimize harsh shadows, deep shading, and strong contrast on the garment itself.
+      - Preserve natural seam definition and texture, but avoid dark shadowed regions on the garment that could blend into the background.
       - Keep the style photorealistic and suitable for an ecommerce product card.
       - Do not invent a different garment or change the dominant color/pattern.
       - Treat the structured fields and description below as identity constraints from an earlier identification pass.
@@ -248,6 +260,7 @@ class OpenrouterImageCleaner
     return [] if metadata_context.blank?
 
     lines = []
+    lines << "- Category: #{metadata_context[:category]}" if metadata_context[:category].present?
     lines << "- Name: #{metadata_context[:name]}" if metadata_context[:name].present?
     lines << "- Brand: #{metadata_context[:brand]}" if metadata_context[:brand].present?
     lines << "- Size: #{metadata_context[:size]}" if metadata_context[:size].present?
@@ -272,5 +285,15 @@ class OpenrouterImageCleaner
 
   def configured_model
     ENV.fetch("OPENROUTER_IMAGE_CLEAN_MODEL", DEFAULT_MODEL)
+  end
+
+  def configured_max_tokens
+    integer_env("OPENROUTER_IMAGE_CLEAN_MAX_TOKENS", DEFAULT_MAX_TOKENS)
+  end
+
+  def integer_env(name, default)
+    Integer(ENV.fetch(name, default))
+  rescue ArgumentError, TypeError
+    default
   end
 end

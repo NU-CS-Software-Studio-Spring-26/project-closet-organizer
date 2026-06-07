@@ -2,7 +2,31 @@
 
 ## Unreleased
 
+- Patched audited backend dependencies by upgrading `puma` to `8.0.2`, `erb` to `6.0.4`, `faraday` to `2.14.2`, `jwt` to `3.2.0`, and the transitive OAuth stack to `oauth2 2.0.22` so the branch clears the current `bundler-audit` CVEs for the Rails server and Google sign-in path.
 - Added filter-aware closet search suggestions with fuzzy typo matching: typing in the closet search field now opens an item dropdown that respects active tag, color, and brand filters, click fills the search query, and Enter opens the highlighted item.
+- Added explicit OpenRouter completion-token caps for structured vision, metadata suggestion, and AI clean-image requests, with backend env overrides, so per-key spend limits are less likely to reject a single request for asking for too large a completion budget.
+- Stabilized the expanded image editor modal so the left image viewport stays fixed while crop results resize inside it, preset crop ratios become immediately actionable without an extra drag, and modal-local undo/redo stays separate from the larger page-level saved-image history.
+- Added simple in-modal image rotation controls so users can rotate the current preview left, right, or 180 degrees before applying the edited image back to the page.
+- Moved `AI clean image` and `Make transparent PNG` into the expanded image editor itself so users can keep image cleanup and manual edits in one modal before applying the final result back to the page.
+- Added a development-only `test_user_id` local auth path (`X-Test-User-Id` / `?test_user_id=`) so local browser QA can reach authenticated item flows without relying on the Google OAuth round-trip.
+- Refactored the AI item pipeline around shared frontend AI action hooks plus a leaner backend cleanup: image-source policy now lives in the models/helpers that own it, while the clean-image and metadata generator services remain the main execution path instead of being wrapped in a second backend abstraction layer.
+- Simplified the AI item-image pipeline back to one visible catalog image per clean request: `AI clean image` now produces the user-facing cleaned image directly, and the model itself chooses between a white or dark-charcoal studio background based on whether the garment is light enough to need darker contrast.
+- Kept the transparent-PNG follow-up step, but removed the hidden working-image pipeline so item create/edit flows and preview endpoints now generate one visible cleaned image first and run the transparent cleanup step from that same cleaned result.
+- Optimized `GET /me` so the current-user payload now preloads closet item attachments instead of triggering a large per-item attachment query storm, which was causing local session checks to take tens of seconds and continue draining even after the browser canceled.
+- Fixed the manual create-item flow so replacing or clearing an uploaded source image now invalidates any in-flight AI clean request instead of letting a stale cleaned result snap the preview back to the old image.
+- Changed manual create-flow AI metadata autofill to treat the latest user-uploaded photo as the primary source image, so replacing an item photo no longer leaves AI suggestions anchored to an older upload or a later AI-generated preview.
+- Tightened the AI clean-image prompt so it explicitly chooses between a plain white or dark-charcoal studio background based on the garment shown in the uploaded image instead of relying on deterministic backdrop-selection code.
+- Added an expanded image editor in the frontend preview modal so users can crop images to different aspect ratios and use a Preview-style magic-wand erase tool before saving or running AI actions.
+- Added granular item-editor undo/redo improvements: manual metadata edits in the create-item flow now enter the local history stack, saved-item metadata commits save in smaller steps, and both item editors support `Cmd/Ctrl+Z` undo plus `Cmd/Ctrl+Shift+Z` redo.
+- Tightened the AI clean-image prompt to demand a single uniform studio backdrop with visible edge margin and no cast, floor, or contact shadows so the saved image reads clearly as a closet card without any post-processing pass.
+- Added a snapshot-based account mirror workflow that can export, preview, and hard-replace one user's full owned data between environments while copying the exact attached images and requiring a typed confirmation token before production applies.
+- Added persistent existing-item Undo in the metadata header and moved the existing item editor to autosave, so metadata edits, image replacements, and AI clean saves can be reversed one persisted step at a time without a manual save button.
+- Added a visible Undo button to the unsaved manual create-item flow so upload, AI clean, and AI autofill changes can be reversed before the item exists.
+- Added lightweight undo feedback for reversible create-flow AI actions and outfit-cart removals, while adding explicit pre-delete warnings for destructive outfit and clothing-item deletes.
+- Added create-time AI-clean warnings so if a cleaned image is still processing, users can either proceed with the current image or create immediately and have the cleaned image auto-attach once it finishes.
+- Reworked item-editor AI clean flows to stage cleaned previews locally first and save them as `cleaned_photo` attachments, so users can undo AI replacements before committing changes.
+- Added an incremental production-item import task that copies only prod clothing items missing locally for one account, then runs just those imported originals through the PNG cleaner.
+- Added a one-time user-level PNG backfill task for clothing items so an existing account can run only its original item photos through the AI cleaner and attach cleaned PNG outputs in bulk.
 - Fixed Heroku frontend deploys by keeping the Vite build-time plugins (`@tailwindcss/vite` and `@vitejs/plugin-react`) in production dependencies and pinning the root Node runtime to `22.x`.
 - Added a configurable post-removal sharpen step to AI-cleaned transparent PNG outputs so item edges render a bit crisper after background removal.
 - Added automated saved-outfit collage contract coverage for backend round-trips and frontend layout math so saved cards, the editor preview, and resize-ratio fallback stay aligned.

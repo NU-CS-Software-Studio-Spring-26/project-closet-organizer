@@ -1,6 +1,10 @@
 import { FormEvent, ReactNode } from "react";
 import { motion } from "motion/react";
 import { ArrowLeft } from "lucide-react";
+import type {
+  ExpandedImageEditorApplyContext,
+  ExpandedImageEditorImageActions,
+} from "./ExpandedImageEditor";
 import { PrimitiveButton } from "./primitives/PrimitiveButton";
 import { PrimitiveText } from "./primitives/PrimitiveText";
 import { UploadWorkspace } from "./UploadWorkspace";
@@ -8,7 +12,7 @@ import { UploadWorkspace } from "./UploadWorkspace";
 interface ItemEditorWorkspaceProps {
   backLabel?: string;
   children: ReactNode;
-  footer: ReactNode;
+  footer?: ReactNode;
   formLabel: string;
   formTopAction?: ReactNode;
   imageUrl?: string | null;
@@ -17,12 +21,18 @@ interface ItemEditorWorkspaceProps {
   onPreviewClick?: () => void;
   onPreviewEdit?: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  previewEditor?: {
+    getEditableFile: () => Promise<File | null>;
+    imageActions?: ExpandedImageEditorImageActions;
+    onApply: (file: File, context: ExpandedImageEditorApplyContext) => Promise<void> | void;
+  };
   previewAriaLabel?: string;
   previewBackgroundDecoration?: ReactNode;
   isPreviewProcessing?: boolean;
   previewLabel: string;
   previewPrimaryDetail: string;
   previewSecondaryDetail?: string | null;
+  previewFooter?: ReactNode;
   previewTitle: string;
   previewTopAction?: ReactNode;
 }
@@ -39,12 +49,14 @@ export function ItemEditorWorkspace({
   onPreviewClick,
   onPreviewEdit,
   onSubmit,
+  previewEditor,
   previewAriaLabel,
   previewBackgroundDecoration,
   isPreviewProcessing,
   previewLabel,
   previewPrimaryDetail,
   previewSecondaryDetail,
+  previewFooter,
   previewTitle,
   previewTopAction,
 }: ItemEditorWorkspaceProps) {
@@ -86,6 +98,7 @@ export function ItemEditorWorkspace({
           onPreviewClick={onPreviewClick}
           onPreviewClear={onPreviewClear}
           onPreviewEdit={onPreviewEdit}
+          previewEditor={previewEditor}
           previewAriaLabel={previewAriaLabel}
           previewBackgroundDecoration={previewBackgroundDecoration}
           isPreviewProcessing={isPreviewProcessing}
@@ -93,6 +106,7 @@ export function ItemEditorWorkspace({
           previewLabel={previewLabel}
           previewPrimaryDetail={previewPrimaryDetail}
           previewSecondaryDetail={previewSecondaryDetail}
+          previewFooter={previewFooter}
           previewTitle={previewTitle}
         >
           {children}
