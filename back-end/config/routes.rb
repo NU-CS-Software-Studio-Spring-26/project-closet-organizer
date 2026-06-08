@@ -14,7 +14,10 @@ Rails.application.routes.draw do
   scope defaults: { format: :json } do
     root "clothing_items#index"
     get "me", to: "sessions#me"
+    post "session", to: "sessions#create"
     delete "session", to: "sessions#destroy"
+    post "password_reset", to: "password_resets#create"
+    patch "password_reset", to: "password_resets#update"
 
     resources :users, except: %i[new edit]
     resources :clothing_items, except: %i[new edit] do

@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { ArrowRight } from "lucide-react";
 import { beginGoogleSignIn } from "../../lib/closet";
+import { navigateTo } from "../../lib/routes";
 import { PrimitiveButton } from "../primitives/PrimitiveButton";
 import { PrimitiveText } from "../primitives/PrimitiveText";
 
@@ -43,13 +44,29 @@ export function HomeLanding({ homeMessage }: HomeLandingProps) {
         >
           Find your fit, faster.
         </PrimitiveText>
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <PrimitiveButton
+            onClick={() => navigateTo("/sign-in")}
+            className="h-auto px-6 py-3"
+          >
+            Sign in
+            <ArrowRight className="h-4 w-4" />
+          </PrimitiveButton>
+          <PrimitiveButton
+            onClick={() => navigateTo("/sign-up")}
+            variant="outline"
+            className="h-auto px-6 py-3"
+          >
+            Create account
+          </PrimitiveButton>
+        </div>
+
         <PrimitiveButton
           onClick={() => beginGoogleSignIn()}
-          variant="outline"
-          className="h-auto px-6 py-3"
+          variant="ghost"
+          className="mt-4 h-auto px-0 py-0 text-muted-foreground"
         >
-          Sign in with Google
-          <ArrowRight className="h-4 w-4" />
+          Continue with Google
         </PrimitiveButton>
 
         {homeMessage ? (

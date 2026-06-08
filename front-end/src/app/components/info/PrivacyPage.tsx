@@ -48,8 +48,9 @@ export function PrivacyPage() {
       <InfoSection heading="How to request deletion">
         <PrimitiveText as="p" tone="muted">
           You may delete individual clothing items and outfits in the app. To remove your entire
-          account and associated data, {DELETION_CONTACT} Include the email address tied to your
-          Google sign-in so we can locate your account.
+          account and associated data, open Account settings after signing in and use Delete account.
+          Email/password accounts must confirm with their current password. If you cannot access the
+          app, {DELETION_CONTACT} Include the email address tied to your account.
         </PrimitiveText>
         <PrimitiveText as="p" tone="muted">
           Repository for requests:{" "}

@@ -18,6 +18,9 @@ class ApiPayloads
       payload["clothing_items_count"] = clothing_item_count_for_user(user)
     end
 
+    payload["auth_provider"] = user.provider
+    payload["password_login_enabled"] = user.password_login_enabled?
+
     payload
   end
 

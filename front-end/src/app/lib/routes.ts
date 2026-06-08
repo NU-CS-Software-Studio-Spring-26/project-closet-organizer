@@ -4,6 +4,27 @@ interface HomeRouteState {
   kind: "home";
 }
 
+interface SignInRouteState {
+  kind: "sign-in";
+}
+
+interface SignUpRouteState {
+  kind: "sign-up";
+}
+
+interface ForgotPasswordRouteState {
+  kind: "forgot-password";
+}
+
+interface ResetPasswordRouteState {
+  kind: "reset-password";
+  token: string | null;
+}
+
+interface AccountRouteState {
+  kind: "account";
+}
+
 interface ClosetRouteState {
   kind: "closet";
 }
@@ -50,6 +71,11 @@ interface TermsRouteState {
 
 export type AppRoute =
   | HomeRouteState
+  | SignInRouteState
+  | SignUpRouteState
+  | ForgotPasswordRouteState
+  | ResetPasswordRouteState
+  | AccountRouteState
   | ClosetRouteState
   | ItemRouteState
   | UsersRouteState
@@ -65,6 +91,15 @@ export function isPublicInfoRoute(route: AppRoute) {
   return route.kind === "about" || route.kind === "privacy" || route.kind === "terms";
 }
 
+export function isAuthRoute(route: AppRoute) {
+  return (
+    route.kind === "sign-in" ||
+    route.kind === "sign-up" ||
+    route.kind === "forgot-password" ||
+    route.kind === "reset-password"
+  );
+}
+
 export function isClosetRoute(route: AppRoute) {
   return route.kind === "closet" || route.kind === "item" || route.kind === "new-item";
 }
@@ -78,7 +113,7 @@ export function isUsersRoute(route: AppRoute) {
 }
 
 export function isProtectedRoute(route: AppRoute) {
-  return route.kind !== "home" && route.kind !== "not-found" && !isPublicInfoRoute(route);
+  return route.kind !== "home" && route.kind !== "not-found" && !isPublicInfoRoute(route) && !isAuthRoute(route);
 }
 
 export function authErrorMessage(code: string | null) {
@@ -127,6 +162,26 @@ export function getRouteFromLocation(
 
   if (normalizedPath === "/outfits") {
     return { kind: "outfits" };
+  }
+
+  if (normalizedPath === "/account") {
+    return { kind: "account" };
+  }
+
+  if (normalizedPath === "/sign-in") {
+    return { kind: "sign-in" };
+  }
+
+  if (normalizedPath === "/sign-up") {
+    return { kind: "sign-up" };
+  }
+
+  if (normalizedPath === "/forgot-password") {
+    return { kind: "forgot-password" };
+  }
+
+  if (normalizedPath === "/reset-password") {
+    return { kind: "reset-password", token: query.get("token") };
   }
 
   if (userMatch) {

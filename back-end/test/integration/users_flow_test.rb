@@ -60,20 +60,22 @@ class UsersFlowTest < ActionDispatch::IntegrationTest
     assert_equal "You're not authorized to view this page.", response_json["error"]
   end
 
-  test "user creation is handled through google sign-in" do
-    assert_no_difference("User.count") do
+  test "registration does not require an existing session" do
+    assert_difference("User.count", 1) do
       post users_url, params: {
         user: {
           username: "sam",
+          email: "sam-register@example.com",
           preferred_style: "smart casual",
           password: "password123",
-          password_confirmation: "password123"
+          password_confirmation: "password123",
+          accepted_terms: true
         }
-      }, headers: auth_headers(@user), as: :json
+      }, as: :json
     end
 
-    assert_response :unauthorized
-    assert_equal "User creation is handled through Google sign-in.", response_json["error"]
+    assert_response :created
+    assert_equal "sam", response_json["username"]
   end
 
   test "can update a user without changing password" do
