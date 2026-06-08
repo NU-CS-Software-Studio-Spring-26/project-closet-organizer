@@ -1,5 +1,5 @@
 class UsersController < ApplicationController
-  before_action :require_login
+  before_action :require_login, except: :create
   before_action :require_admin, only: %i[index show]
   before_action :set_user, only: %i[ show update destroy ]
 
@@ -26,10 +26,26 @@ class UsersController < ApplicationController
   end
 
   def create
-    render_unauthorized("User creation is handled through Google sign-in.")
+    user = User.register_with_password!(registration_params)
+    reset_session
+    session[:user_id] = user.id
+    render json: payloads.user(user), status: :created
+  rescue ActiveRecord::RecordInvalid => error
+    render_validation_errors(error.record)
   end
 
   def update
+    if password_change_requested? && !@user.password_login_enabled?
+      render json: { error: "Password is managed through Google sign-in for this account." },
+             status: :unprocessable_content
+      return
+    end
+
+    if password_change_requested? && !@user.authenticate_current_password(params.dig(:user, :current_password))
+      render json: { error: "Current password is incorrect." }, status: :unauthorized
+      return
+    end
+
     if @user.update(user_params)
       render json: payloads.user(@user)
     else
@@ -38,7 +54,14 @@ class UsersController < ApplicationController
   end
 
   def destroy
+    if @user.password_login_enabled? && !@user.authenticate_current_password(params.dig(:user, :password))
+      render json: { error: "Current password is incorrect." }, status: :unauthorized
+      return
+    end
+
+    deleting_self = @user.id == current_user.id
     @user.destroy
+    reset_session if deleting_self
     head :no_content
   end
 
@@ -48,14 +71,36 @@ class UsersController < ApplicationController
     @user = admin? ? User.find(params[:id]) : current_user
   end
 
+  def registration_params
+    params.require(:user).permit(
+      :username,
+      :email,
+      :preferred_style,
+      :password,
+      :password_confirmation,
+      :accepted_terms
+    )
+  end
+
   def user_params
-    permitted = params.require(:user).permit(:username, :preferred_style, :password, :password_confirmation)
+    permitted = params.require(:user).permit(
+      :username,
+      :preferred_style,
+      :password,
+      :password_confirmation
+    )
 
     if permitted[:password].blank? && permitted[:password_confirmation].blank?
       permitted.except(:password, :password_confirmation)
     else
       permitted
     end
+  end
+
+  def password_change_requested?
+    password = params.dig(:user, :password).to_s
+    password_confirmation = params.dig(:user, :password_confirmation).to_s
+    password.present? || password_confirmation.present?
   end
 
   def resolved_per_page

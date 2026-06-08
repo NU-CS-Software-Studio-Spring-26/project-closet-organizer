@@ -2,6 +2,11 @@ import { Dispatch, SetStateAction, useDeferredValue, useEffect, useRef, useState
 import { motion } from "motion/react";
 import { ShoppingBag } from "lucide-react";
 import { Toaster, toast } from "sonner";
+import { AccountSettingsPage } from "./components/AccountSettingsPage";
+import { ForgotPasswordPage } from "./components/auth/ForgotPasswordPage";
+import { ResetPasswordPage } from "./components/auth/ResetPasswordPage";
+import { SignInPage } from "./components/auth/SignInPage";
+import { SignUpPage } from "./components/auth/SignUpPage";
 import { AddItemMenu } from "./components/AddItemMenu";
 import { ClothingCard } from "./components/ClothingCard";
 import { CreateItemPage } from "./components/CreateItemPage";
@@ -66,6 +71,7 @@ import {
   AppRoute,
   authErrorMessage,
   getRouteFromLocation,
+  isAuthRoute,
   isClosetRoute,
   isOutfitRoute,
   isProtectedRoute,
@@ -215,7 +221,10 @@ export default function App() {
       return;
     }
 
-    setHomeMessage({ kind: "error", text: authErrorMessage(authError) });
+    if (route.kind === "home") {
+      setHomeMessage({ kind: "error", text: authErrorMessage(authError) });
+    }
+
     query.delete("auth_error");
 
     const nextSearch = query.toString();
@@ -224,8 +233,7 @@ export default function App() {
   }, [route.kind]);
 
   useEffect(() => {
-    const shouldLoadSession = route.kind === "home" || isProtectedRoute(route);
-    const unauthorizedMessage = "You do not have permission to view this page. Please log in.";
+    const shouldLoadSession = route.kind === "home" || isProtectedRoute(route) || isAuthRoute(route);
 
     if (!shouldLoadSession) {
       setIsLoading(false);
@@ -236,8 +244,7 @@ export default function App() {
       setIsLoading(false);
 
       if (!user && isProtectedRoute(route)) {
-        setHomeMessage({ kind: "error", text: unauthorizedMessage });
-        navigateTo("/");
+        navigateTo("/sign-in");
       }
 
       return;
@@ -255,8 +262,7 @@ export default function App() {
         if (!nextUser) {
           setUser(null);
           if (isProtectedRoute(route)) {
-            setHomeMessage({ kind: "error", text: unauthorizedMessage });
-            navigateTo("/");
+            navigateTo("/sign-in");
           }
           return;
         }
@@ -294,7 +300,7 @@ export default function App() {
   }, [outfitCartStatusMessage]);
 
   useEffect(() => {
-    if (route.kind === "home" && user) {
+    if (user && (route.kind === "home" || isAuthRoute(route))) {
       navigateTo("/closet");
     }
   }, [route.kind, user]);
@@ -470,7 +476,8 @@ export default function App() {
     navigateTo("/");
   }
 
-  const shouldRenderStandaloneAuthPage = !user && (route.kind === "home" || isLoggedOutProtectedRoute);
+  const shouldRenderStandaloneAuthPage =
+    !user && (route.kind === "home" || isAuthRoute(route) || isLoggedOutProtectedRoute);
 
   let pageContent;
 
@@ -478,8 +485,46 @@ export default function App() {
     return <div className="min-h-screen bg-background" />;
   }
 
-  if ((!user && route.kind === "home") || (isLoggedOutProtectedRoute && !isLoading)) {
+  if (!user && route.kind === "sign-in" && !isLoading) {
+    pageContent = (
+      <SignInPage
+        authError={new URLSearchParams(window.location.search).get("auth_error")}
+        onSignedIn={(nextUser) => {
+          hasResolvedSessionRef.current = true;
+          setUser(nextUser);
+          setHomeMessage(null);
+        }}
+      />
+    );
+  } else if (!user && route.kind === "sign-up" && !isLoading) {
+    pageContent = (
+      <SignUpPage
+        onRegistered={(nextUser) => {
+          hasResolvedSessionRef.current = true;
+          setUser(nextUser);
+          setHomeMessage(null);
+        }}
+      />
+    );
+  } else if (!user && route.kind === "forgot-password" && !isLoading) {
+    pageContent = <ForgotPasswordPage />;
+  } else if (!user && route.kind === "reset-password" && !isLoading) {
+    pageContent = <ResetPasswordPage token={route.token} />;
+  } else if ((!user && route.kind === "home") || (isLoggedOutProtectedRoute && !isLoading)) {
     pageContent = <HomeLanding homeMessage={homeMessage} />;
+  } else if (route.kind === "account" && user) {
+    pageContent = (
+      <AccountSettingsPage
+        user={user}
+        onBack={() => navigateTo("/closet")}
+        onUserUpdated={(nextUser) => setUser(nextUser)}
+        onAccountDeleted={() => {
+          hasResolvedSessionRef.current = true;
+          setUser(null);
+          setHomeMessage({ kind: "success", text: "Your account was deleted." });
+        }}
+      />
+    );
   } else if (route.kind === "about") {
     pageContent = <AboutPage />;
   } else if (route.kind === "privacy") {

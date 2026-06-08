@@ -58,7 +58,7 @@ class ApplicationController < ActionController::API
   def require_login
     return if logged_in?
 
-    render_unauthorized("Please sign in with Google.")
+    render_unauthorized("Please sign in to continue.")
   end
 
   def require_admin

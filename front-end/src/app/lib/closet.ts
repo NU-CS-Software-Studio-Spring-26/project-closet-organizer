@@ -62,6 +62,10 @@ export interface ClothingItem {
 }
 
 export interface User extends UserSummary {
+  email?: string | null;
+  avatar_url?: string | null;
+  auth_provider?: string;
+  password_login_enabled?: boolean;
   clothing_items: ClothingItem[];
   clothing_items_count: number;
 }
@@ -417,6 +421,111 @@ export function beginGoogleSignIn() {
 export async function logoutSession() {
   await requestVoid(`${API_BASE_URL}/session`, {
     method: "DELETE",
+  });
+}
+
+export interface RegisterUserInput {
+  username: string;
+  email: string;
+  password: string;
+  passwordConfirmation: string;
+  preferredStyle?: string;
+  acceptedTerms: boolean;
+}
+
+export async function signInWithEmail(email: string, password: string) {
+  const user = await requestJson<User>(`${API_BASE_URL}/session`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session: { email, password } }),
+  });
+
+  return normalizeUserPayload(user);
+}
+
+export async function registerUser(input: RegisterUserInput) {
+  const user = await requestJson<User>(`${API_BASE_URL}/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user: {
+        username: input.username,
+        email: input.email,
+        password: input.password,
+        password_confirmation: input.passwordConfirmation,
+        preferred_style: input.preferredStyle ?? "",
+        accepted_terms: input.acceptedTerms,
+      },
+    }),
+  });
+
+  return normalizeUserPayload(user);
+}
+
+export async function requestPasswordReset(email: string) {
+  return requestJson<{ message: string; development_reset_url?: string }>(
+    `${API_BASE_URL}/password_reset`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password_reset: { email } }),
+    },
+  );
+}
+
+export async function resetPassword(input: {
+  token: string;
+  password: string;
+  passwordConfirmation: string;
+}) {
+  return requestJson<{ message: string }>(`${API_BASE_URL}/password_reset`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      password_reset: {
+        token: input.token,
+        password: input.password,
+        password_confirmation: input.passwordConfirmation,
+      },
+    }),
+  });
+}
+
+export interface UpdateCurrentUserInput {
+  username?: string;
+  preferredStyle?: string;
+  currentPassword?: string;
+  password?: string;
+  passwordConfirmation?: string;
+}
+
+export async function updateCurrentUser(userId: number, input: UpdateCurrentUserInput) {
+  const user = await requestJson<User>(`${API_BASE_URL}/users/${userId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user: {
+        username: input.username,
+        preferred_style: input.preferredStyle,
+        current_password: input.currentPassword,
+        password: input.password,
+        password_confirmation: input.passwordConfirmation,
+      },
+    }),
+  });
+
+  return normalizeUserPayload(user);
+}
+
+export async function deleteCurrentUser(userId: number, password?: string) {
+  await requestVoid(`${API_BASE_URL}/users/${userId}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user: {
+        password: password ?? "",
+      },
+    }),
   });
 }
 

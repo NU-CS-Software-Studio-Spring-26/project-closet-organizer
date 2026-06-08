@@ -1,4 +1,4 @@
-import { ArrowRight, Users } from "lucide-react";
+import { ArrowRight, UserRound, Users } from "lucide-react";
 import type { AppRoute } from "../../lib/routes";
 import { isClosetRoute, isOutfitRoute, isUsersRoute, navigateTo } from "../../lib/routes";
 import type { User } from "../../lib/closet";
@@ -69,6 +69,18 @@ export function SiteHeader({ route, user, onSignOut }: SiteHeaderProps) {
                   Users
                 </PrimitiveButton>
               ) : null}
+              <PrimitiveButton
+                onClick={() => navigateTo("/account")}
+                variant="outline"
+                className={
+                  route.kind === "account"
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border text-foreground hover:border-foreground"
+                }
+              >
+                <UserRound className="h-4 w-4" />
+                Account
+              </PrimitiveButton>
             </nav>
           ) : null}
           {globalAction}
