@@ -988,9 +988,9 @@ export function CreateItemPage({
             <AlertDialogHeader>
               <AlertDialogTitle>AI cleaning is still running</AlertDialogTitle>
               <AlertDialogDescription>
-                One or more selected detected items are still being AI cleaned. You can save them
-                now with their current images, or keep going and let the cleaned versions auto-save
-                onto the created items as soon as they finish.
+                Some items are still being cleaned by the AI. You can save them now with their
+                current images. Alternatively, keep going and the cleaned versions will auto-save
+                as soon as they finish.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="sm:justify-between">
@@ -1156,9 +1156,8 @@ export function CreateItemPage({
           <AlertDialogHeader>
             <AlertDialogTitle>Your image is still being cleaned</AlertDialogTitle>
             <AlertDialogDescription>
-              The AI-cleaned version is still processing. You can create the item now with the
-              current image, or create it now and let the cleaned version auto-save onto the item
-              once it is ready.
+              The AI-cleaned image is still processing. You can create the item now with the
+              current image. The cleaned version will auto-save onto the item once it is ready.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="sm:justify-between">
