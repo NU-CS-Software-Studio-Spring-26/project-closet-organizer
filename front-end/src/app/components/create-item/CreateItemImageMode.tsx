@@ -286,7 +286,7 @@ export function CreateItemImageMode({
         previewBackgroundDecoration={
           isSourceFocused ? (
             <Upload
-              className="h-40 w-40 text-stone-700/18 sm:h-52 sm:w-52"
+              className="h-40 w-40 text-stone-700 sm:h-52 sm:w-52"
               strokeWidth={1.1}
             />
           ) : undefined
