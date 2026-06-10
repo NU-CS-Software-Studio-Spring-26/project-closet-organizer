@@ -5,7 +5,7 @@ class ApiPayloads
 
   def user(user, include_items: true)
     payload = user.serializable_hash(
-      only: %i[id username preferred_style email avatar_url admin created_at updated_at]
+      only: %i[id username preferred_style email avatar_url admin provider created_at updated_at]
     )
 
     if include_items
