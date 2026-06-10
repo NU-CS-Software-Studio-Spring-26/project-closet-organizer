@@ -17,3 +17,12 @@ two:
   admin: true
   provider: google_oauth2
   uid: google-jordan
+
+local_one:
+  username: sam
+  email: sam@example.com
+  password_digest: <%= BCrypt::Password.create("localpass99") %>
+  preferred_style: casual
+  admin: false
+  provider: local
+  uid: sam

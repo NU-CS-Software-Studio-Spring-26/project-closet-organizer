@@ -13,6 +13,22 @@ class User < ApplicationRecord
   validates :provider, presence: true
   validates :uid, presence: true, uniqueness: { scope: :provider }
 
+  def self.from_local_registration(attrs)
+    new(
+      provider: "local",
+      uid: attrs[:username].to_s.strip,
+      username: attrs[:username],
+      email: attrs[:email],
+      password: attrs[:password],
+      password_confirmation: attrs[:password_confirmation]
+    )
+  end
+
+  def self.authenticate_local(username:, password:)
+    user = find_by(provider: "local", uid: username.to_s.strip)
+    user&.authenticate(password) ? user : nil
+  end
+
   def self.from_google_auth(auth_hash)
     user = find_for_google_auth(auth_hash)
     preferred_username = auth_hash.info.name.presence || auth_hash.info.email.presence || "User"

@@ -1,5 +1,5 @@
 class UsersController < ApplicationController
-  before_action :require_login
+  before_action :require_login, except: %i[create]
   before_action :require_admin, only: %i[index show]
   before_action :set_user, only: %i[ show update destroy ]
 
@@ -26,7 +26,14 @@ class UsersController < ApplicationController
   end
 
   def create
-    render_unauthorized("User creation is handled through Google sign-in.")
+    user = User.from_local_registration(registration_params)
+    if user.save
+      reset_session
+      session[:user_id] = user.id
+      render json: payloads.user(user), status: :created
+    else
+      render_validation_errors(user)
+    end
   end
 
   def update
@@ -46,6 +53,10 @@ class UsersController < ApplicationController
 
   def set_user
     @user = admin? ? User.find(params[:id]) : current_user
+  end
+
+  def registration_params
+    params.require(:user).permit(:username, :email, :password, :password_confirmation).to_h.symbolize_keys
   end
 
   def user_params

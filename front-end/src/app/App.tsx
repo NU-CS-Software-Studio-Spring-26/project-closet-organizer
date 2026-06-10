@@ -479,7 +479,16 @@ export default function App() {
   }
 
   if ((!user && route.kind === "home") || (isLoggedOutProtectedRoute && !isLoading)) {
-    pageContent = <HomeLanding homeMessage={homeMessage} />;
+    pageContent = (
+      <HomeLanding
+        homeMessage={homeMessage}
+        onAuthSuccess={(nextUser) => {
+          hasResolvedSessionRef.current = true;
+          setUser(nextUser);
+          navigateTo("/closet");
+        }}
+      />
+    );
   } else if (route.kind === "about") {
     pageContent = <AboutPage />;
   } else if (route.kind === "privacy") {

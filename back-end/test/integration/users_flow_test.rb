@@ -11,8 +11,9 @@ class UsersFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     usernames = response_json["users"].map { |user| user["username"] }.sort
-    assert_equal [ @user.username, @admin.username ].sort, usernames
-    assert_equal 2, response_json.dig("meta", "total_count")
+    expected = [ @user.username, @admin.username, users(:local_one).username ].sort
+    assert_equal expected, usernames
+    assert_equal 3, response_json.dig("meta", "total_count")
     assert_equal 1, response_json.dig("meta", "page")
   end
 
@@ -21,8 +22,8 @@ class UsersFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_equal 1, response_json["users"].size
-    assert_equal 2, response_json.dig("meta", "total_count")
-    assert_equal 2, response_json.dig("meta", "total_pages")
+    assert_equal 3, response_json.dig("meta", "total_count")
+    assert_equal 3, response_json.dig("meta", "total_pages")
   end
 
   test "browser html request for users index falls back to the frontend app" do
@@ -60,20 +61,19 @@ class UsersFlowTest < ActionDispatch::IntegrationTest
     assert_equal "You're not authorized to view this page.", response_json["error"]
   end
 
-  test "user creation is handled through google sign-in" do
-    assert_no_difference("User.count") do
+  test "local registration creates a new user" do
+    assert_difference("User.count", 1) do
       post users_url, params: {
         user: {
-          username: "sam",
-          preferred_style: "smart casual",
-          password: "password123",
-          password_confirmation: "password123"
+          username: "brandnewuser",
+          password: "hunter2hunter2",
+          password_confirmation: "hunter2hunter2"
         }
-      }, headers: auth_headers(@user), as: :json
+      }, as: :json
     end
 
-    assert_response :unauthorized
-    assert_equal "User creation is handled through Google sign-in.", response_json["error"]
+    assert_response :created
+    assert_equal "brandnewuser", response_json["username"]
   end
 
   test "can update a user without changing password" do
