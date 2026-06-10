@@ -5,7 +5,8 @@ class LocalAuthFlowTest < ActionDispatch::IntegrationTest
 
   test "registers a new local user with valid params" do
     post users_url, params: {
-      user: { username: "newuser", password: "hunter2hunter2", password_confirmation: "hunter2hunter2" }
+      user: { username: "newuser", password: "hunter2hunter2", password_confirmation: "hunter2hunter2",
+              terms_accepted: true }
     }, as: :json
 
     assert_response :created
