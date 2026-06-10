@@ -48,6 +48,15 @@ interface TermsRouteState {
   kind: "terms";
 }
 
+interface ForgotPasswordRouteState {
+  kind: "forgot-password";
+}
+
+interface ResetPasswordRouteState {
+  kind: "reset-password";
+  token: string;
+}
+
 export type AppRoute =
   | HomeRouteState
   | ClosetRouteState
@@ -59,6 +68,8 @@ export type AppRoute =
   | AboutRouteState
   | PrivacyRouteState
   | TermsRouteState
+  | ForgotPasswordRouteState
+  | ResetPasswordRouteState
   | NotFoundRouteState;
 
 export function isPublicInfoRoute(route: AppRoute) {
@@ -77,8 +88,17 @@ export function isUsersRoute(route: AppRoute) {
   return route.kind === "users" || route.kind === "user";
 }
 
+export function isAuthRoute(route: AppRoute) {
+  return route.kind === "forgot-password" || route.kind === "reset-password";
+}
+
 export function isProtectedRoute(route: AppRoute) {
-  return route.kind !== "home" && route.kind !== "not-found" && !isPublicInfoRoute(route);
+  return (
+    route.kind !== "home" &&
+    route.kind !== "not-found" &&
+    !isPublicInfoRoute(route) &&
+    !isAuthRoute(route)
+  );
 }
 
 export function authErrorMessage(code: string | null) {
@@ -147,6 +167,14 @@ export function getRouteFromLocation(
 
   if (normalizedPath === "/terms") {
     return { kind: "terms" };
+  }
+
+  if (normalizedPath === "/forgot-password") {
+    return { kind: "forgot-password" };
+  }
+
+  if (normalizedPath === "/reset-password") {
+    return { kind: "reset-password", token: query.get("token") ?? "" };
   }
 
   if (normalizedPath === "/") {

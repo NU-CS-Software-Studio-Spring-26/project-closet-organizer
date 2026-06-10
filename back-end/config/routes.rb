@@ -16,6 +16,8 @@ Rails.application.routes.draw do
     get "me", to: "sessions#me"
     post "session", to: "sessions#login"
     delete "session", to: "sessions#destroy"
+    post "password_resets", to: "password_resets#create"
+    patch "password_resets", to: "password_resets#update"
 
     resources :users, except: %i[new edit]
     resources :clothing_items, except: %i[new edit] do

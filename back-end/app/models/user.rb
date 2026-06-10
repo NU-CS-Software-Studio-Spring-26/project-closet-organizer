@@ -1,6 +1,10 @@
 class User < ApplicationRecord
   has_secure_password
 
+  generates_token_for :password_reset, expires_in: 2.hours do
+    password_salt&.last(10)
+  end
+
   has_many :clothing_items, dependent: :destroy
   has_many :outfits, dependent: :destroy
   has_many :outfit_uploads, dependent: :destroy
@@ -27,6 +31,10 @@ class User < ApplicationRecord
   def self.authenticate_local(username:, password:)
     user = find_by(provider: "local", uid: username.to_s.strip)
     user&.authenticate(password) ? user : nil
+  end
+
+  def self.find_local_by_email(email)
+    find_by(provider: "local", email: email.to_s.strip.downcase)
   end
 
   def self.from_google_auth(auth_hash)
