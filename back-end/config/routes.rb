@@ -16,6 +16,7 @@ Rails.application.routes.draw do
     get "me", to: "sessions#me"
     post "session", to: "sessions#login"
     delete "session", to: "sessions#destroy"
+    patch "change_password", to: "users#change_password"
     post "password_resets", to: "password_resets#create"
     patch "password_resets", to: "password_resets#update"
 

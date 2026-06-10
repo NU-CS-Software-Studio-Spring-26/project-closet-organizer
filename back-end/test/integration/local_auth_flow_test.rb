@@ -5,7 +5,8 @@ class LocalAuthFlowTest < ActionDispatch::IntegrationTest
 
   test "registers a new local user with valid params" do
     post users_url, params: {
-      user: { username: "newuser", password: "hunter2hunter2", password_confirmation: "hunter2hunter2" }
+      user: { username: "newuser", password: "hunter2hunter2", password_confirmation: "hunter2hunter2",
+              terms_accepted: true }
     }, as: :json
 
     assert_response :created
@@ -70,5 +71,33 @@ class LocalAuthFlowTest < ActionDispatch::IntegrationTest
     post session_path, params: { username: users(:one).username, password: "password123" }, as: :json
 
     assert_response :unauthorized
+  end
+
+  # --- Terms acceptance ---
+
+  test "registration returns 422 when terms are not accepted" do
+    post users_url, params: {
+      user: { username: "termstester", password: "hunter2hunter2", password_confirmation: "hunter2hunter2",
+              terms_accepted: false }
+    }, as: :json
+
+    assert_response :unprocessable_entity
+  end
+
+  test "registration returns 422 when terms param is absent" do
+    post users_url, params: {
+      user: { username: "termstester2", password: "hunter2hunter2", password_confirmation: "hunter2hunter2" }
+    }, as: :json
+
+    assert_response :unprocessable_entity
+  end
+
+  test "registration succeeds when terms are accepted" do
+    post users_url, params: {
+      user: { username: "termstester3", password: "hunter2hunter2", password_confirmation: "hunter2hunter2",
+              terms_accepted: true }
+    }, as: :json
+
+    assert_response :created
   end
 end

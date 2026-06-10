@@ -36,6 +36,10 @@ interface NotFoundRouteState {
   kind: "not-found";
 }
 
+interface SettingsRouteState {
+  kind: "settings";
+}
+
 interface AboutRouteState {
   kind: "about";
 }
@@ -68,6 +72,7 @@ export type AppRoute =
   | AboutRouteState
   | PrivacyRouteState
   | TermsRouteState
+  | SettingsRouteState
   | ForgotPasswordRouteState
   | ResetPasswordRouteState
   | NotFoundRouteState;
@@ -167,6 +172,10 @@ export function getRouteFromLocation(
 
   if (normalizedPath === "/terms") {
     return { kind: "terms" };
+  }
+
+  if (normalizedPath === "/settings") {
+    return { kind: "settings" };
   }
 
   if (normalizedPath === "/forgot-password") {

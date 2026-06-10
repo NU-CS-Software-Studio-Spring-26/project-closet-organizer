@@ -20,12 +20,19 @@ export function HomeLanding({ homeMessage, onAuthSuccess }: HomeLandingProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleLocalSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError("");
+
+    if (mode === "register" && !termsAccepted) {
+      setFormError("You must accept the Terms of Service to create an account.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -48,6 +55,7 @@ export function HomeLanding({ homeMessage, onAuthSuccess }: HomeLandingProps) {
     setFormError("");
     setPassword("");
     setPasswordConfirmation("");
+    setTermsAccepted(false);
   }
 
   return (
@@ -207,6 +215,24 @@ export function HomeLanding({ homeMessage, onAuthSuccess }: HomeLandingProps) {
             </div>
           )}
 
+          {mode === "register" && (
+            <label className="flex items-start gap-2 text-sm text-foreground">
+              <input
+                id="local-terms"
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="mt-0.5 shrink-0 accent-foreground"
+              />
+              <span>
+                I agree to the{" "}
+                <a href="/terms" className="underline hover:text-muted-foreground">
+                  Terms of Service
+                </a>
+              </span>
+            </label>
+          )}
+
           {formError ? (
             <p role="alert" className="text-sm text-destructive">
               {formError}
@@ -215,7 +241,7 @@ export function HomeLanding({ homeMessage, onAuthSuccess }: HomeLandingProps) {
 
           <PrimitiveButton
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || (mode === "register" && !termsAccepted)}
             className="mt-1 h-auto w-full px-6 py-3"
           >
             {isSubmitting

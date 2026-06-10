@@ -67,7 +67,8 @@ class UsersFlowTest < ActionDispatch::IntegrationTest
         user: {
           username: "brandnewuser",
           password: "hunter2hunter2",
-          password_confirmation: "hunter2hunter2"
+          password_confirmation: "hunter2hunter2",
+          terms_accepted: true
         }
       }, as: :json
     end

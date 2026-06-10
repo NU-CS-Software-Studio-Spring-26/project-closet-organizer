@@ -9,6 +9,7 @@ import { ItemDetailPage } from "./components/ItemDetailPage";
 import { MyOutfitsPage } from "./components/MyOutfitsPage";
 import { OutfitCartSheet } from "./components/OutfitCartSheet";
 import { OutfitCreatedDialog } from "./components/OutfitCreatedDialog";
+import { SettingsPage } from "./components/SettingsPage";
 import { UserDetailPage } from "./components/UserDetailPage";
 import { UsersDirectoryPage } from "./components/UsersDirectoryPage";
 import {
@@ -594,6 +595,8 @@ export default function App() {
         user={user}
       />
     ) : null;
+  } else if (route.kind === "settings") {
+    pageContent = user ? <SettingsPage user={user} /> : null;
   } else {
     pageContent = (
       <div className="max-w-7xl mx-auto px-6 py-12">
