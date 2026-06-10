@@ -26,6 +26,11 @@ class UsersController < ApplicationController
   end
 
   def create
+    unless params.dig(:user, :terms_accepted).in?([ true, "true", "1", 1 ])
+      return render json: { errors: [ "You must accept the Terms of Service to create an account." ] },
+                    status: :unprocessable_content
+    end
+
     user = User.from_local_registration(registration_params)
     if user.save
       reset_session

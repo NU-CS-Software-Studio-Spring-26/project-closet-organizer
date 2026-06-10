@@ -438,7 +438,15 @@ export async function registerLocal(
   const raw = await requestJson<User>(`${API_BASE_URL}/users`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user: { username, password, password_confirmation: passwordConfirmation, email } }),
+    body: JSON.stringify({
+      user: {
+        username,
+        password,
+        password_confirmation: passwordConfirmation,
+        email,
+        terms_accepted: true,
+      },
+    }),
   });
   return normalizeUserPayload(raw);
 }
