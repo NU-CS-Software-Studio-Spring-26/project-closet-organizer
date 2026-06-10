@@ -82,7 +82,16 @@ export async function fetchAttachmentResponse(
   ) {
     const nextLocation = response.headers.get("location");
     if (nextLocation) {
-      return fetchAttachmentResponse(nextLocation, init, fetchImpl, remainingRedirects - 1);
+      const isExternalRedirect =
+        nextLocation.startsWith("http") &&
+        typeof window !== "undefined" &&
+        !nextLocation.startsWith(window.location.origin);
+      return fetchAttachmentResponse(
+        nextLocation,
+        isExternalRedirect ? {} : init,
+        fetchImpl,
+        remainingRedirects - 1,
+      );
     }
   }
 

@@ -628,10 +628,12 @@ export function ItemDetailPage({
       onSubmit={handleSubmit}
       previewAriaLabel={photoState.imageUrl ? "Preview image" : "Upload photo"}
       previewBackgroundDecoration={
-        <Upload
-          className="h-40 w-40 text-stone-700 sm:h-52 sm:w-52"
-          strokeWidth={1.1}
-        />
+        !photoState.imageUrl ? (
+          <Upload
+            className="h-40 w-40 text-stone-700 sm:h-52 sm:w-52"
+            strokeWidth={1.1}
+          />
+        ) : undefined
       }
       isPreviewProcessing={false}
       previewLabel="Clothing Item"
