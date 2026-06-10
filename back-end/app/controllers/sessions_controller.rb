@@ -2,7 +2,7 @@ class SessionsController < ApplicationController
   def create
     auth_hash = request.env["omniauth.auth"]
     if auth_hash.blank?
-      redirect_to frontend_login_redirect(error: "google_auth_failed")
+      redirect_to frontend_login_redirect(error: "google_auth_failed"), allow_other_host: true
       return
     end
 
@@ -10,9 +10,9 @@ class SessionsController < ApplicationController
     reset_session
     session[:user_id] = user.id
 
-    redirect_to frontend_closet_redirect
+    redirect_to frontend_closet_redirect, allow_other_host: true
   rescue ActiveRecord::RecordInvalid
-    redirect_to frontend_login_redirect(error: "signin_failed")
+    redirect_to frontend_login_redirect(error: "signin_failed"), allow_other_host: true
   end
 
   def login
@@ -31,7 +31,7 @@ class SessionsController < ApplicationController
   end
 
   def failure
-    redirect_to frontend_login_redirect(error: params[:message].presence || "auth_cancelled")
+    redirect_to frontend_login_redirect(error: params[:message].presence || "auth_cancelled"), allow_other_host: true
   end
 
   def me
