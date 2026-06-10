@@ -851,7 +851,6 @@ function inferFilenameFromUrl(imageUrl: string) {
 function loadBrowserImage(sourceImageUrl: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
-    image.crossOrigin = "anonymous";
     image.onload = () => resolve(image);
     image.onerror = () => reject(new Error("Unable to load the source image for this AI action."));
     image.src = sourceImageUrl;

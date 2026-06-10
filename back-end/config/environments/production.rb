@@ -24,6 +24,9 @@ Rails.application.configure do
   # Heroku's filesystem is ephemeral, so production uploads should use S3-compatible storage.
   config.active_storage.service = ENV.fetch("ACTIVE_STORAGE_SERVICE", "local").to_sym
 
+  # Proxy blobs through Rails so JS fetch() works without S3 CORS headers.
+  config.active_storage.resolve_model_to_route = :rails_storage_proxy
+
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   # config.assume_ssl = true
 
