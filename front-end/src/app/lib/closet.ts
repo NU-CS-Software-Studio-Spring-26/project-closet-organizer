@@ -64,6 +64,7 @@ export interface ClothingItem {
 export interface User extends UserSummary {
   clothing_items: ClothingItem[];
   clothing_items_count: number;
+  provider?: string | null;
 }
 
 export interface PaginationMeta {
@@ -441,6 +442,18 @@ export async function registerLocal(
     body: JSON.stringify({ user: { username, password, password_confirmation: passwordConfirmation, email } }),
   });
   return normalizeUserPayload(raw);
+}
+
+export async function changePassword(
+  currentPassword: string,
+  password: string,
+  passwordConfirmation: string,
+) {
+  await requestJson<{ message: string }>(`${API_BASE_URL}/change_password`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ current_password: currentPassword, password, password_confirmation: passwordConfirmation }),
+  });
 }
 
 export interface FetchUsersParams {

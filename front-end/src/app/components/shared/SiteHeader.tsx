@@ -1,4 +1,4 @@
-import { ArrowRight, Users } from "lucide-react";
+import { ArrowRight, Settings, Users } from "lucide-react";
 import type { AppRoute } from "../../lib/routes";
 import { isClosetRoute, isOutfitRoute, isUsersRoute, navigateTo } from "../../lib/routes";
 import type { User } from "../../lib/closet";
@@ -13,10 +13,25 @@ interface SiteHeaderProps {
 
 export function SiteHeader({ route, user, onSignOut }: SiteHeaderProps) {
   const globalAction = user ? (
-    <PrimitiveButton onClick={onSignOut} variant="outline">
-      <Users className="h-4 w-4" />
-      Sign Out
-    </PrimitiveButton>
+    <div className="flex items-center gap-2">
+      <PrimitiveButton
+        onClick={() => navigateTo("/settings")}
+        variant="outline"
+        aria-label="Account settings"
+        className={
+          route.kind === "settings"
+            ? "border-foreground bg-foreground text-background"
+            : "border-border text-foreground hover:border-foreground"
+        }
+      >
+        <Settings className="h-4 w-4" />
+        <span className="hidden sm:inline">Settings</span>
+      </PrimitiveButton>
+      <PrimitiveButton onClick={onSignOut} variant="outline">
+        <Users className="h-4 w-4" />
+        Sign Out
+      </PrimitiveButton>
+    </div>
   ) : (
     <PrimitiveButton onClick={() => beginGoogleSignIn()} variant="outline">
       Sign In

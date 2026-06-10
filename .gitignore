@@ -39,3 +39,6 @@
 
 # macOS filesystem metadata
 .DS_Store
+
+# Local personal notes (not for sharing)
+MILESTONE4_PLAN.md
