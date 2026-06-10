@@ -420,6 +420,29 @@ export async function logoutSession() {
   });
 }
 
+export async function loginLocal(username: string, password: string) {
+  const raw = await requestJson<User>(`${API_BASE_URL}/session`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  return normalizeUserPayload(raw);
+}
+
+export async function registerLocal(
+  username: string,
+  password: string,
+  passwordConfirmation: string,
+  email?: string,
+) {
+  const raw = await requestJson<User>(`${API_BASE_URL}/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user: { username, password, password_confirmation: passwordConfirmation, email } }),
+  });
+  return normalizeUserPayload(raw);
+}
+
 export interface FetchUsersParams {
   page?: number;
   perPage?: number;

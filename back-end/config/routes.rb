@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   scope defaults: { format: :json } do
     root "clothing_items#index"
     get "me", to: "sessions#me"
+    post "session", to: "sessions#login"
     delete "session", to: "sessions#destroy"
 
     resources :users, except: %i[new edit]

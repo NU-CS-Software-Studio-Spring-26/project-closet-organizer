@@ -15,6 +15,21 @@ class SessionsController < ApplicationController
     redirect_to frontend_login_redirect(error: "signin_failed")
   end
 
+  def login
+    user = User.authenticate_local(
+      username: params[:username].to_s.strip,
+      password: params[:password].to_s
+    )
+
+    if user
+      reset_session
+      session[:user_id] = user.id
+      render json: payloads.user(user)
+    else
+      render_unauthorized("Invalid username or password.")
+    end
+  end
+
   def failure
     redirect_to frontend_login_redirect(error: params[:message].presence || "auth_cancelled")
   end
