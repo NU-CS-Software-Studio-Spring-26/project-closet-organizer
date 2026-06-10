@@ -49,6 +49,27 @@ class UsersController < ApplicationController
     end
   end
 
+  def change_password
+    unless current_user.provider == "local"
+      return render json: { errors: [ "Password change is only available for username/password accounts." ] },
+                    status: :unprocessable_content
+    end
+
+    unless current_user.authenticate(params[:current_password].to_s)
+      return render_unauthorized("Current password is incorrect.")
+    end
+
+    if params[:password].blank?
+      return render json: { errors: [ "New password can't be blank." ] }, status: :unprocessable_content
+    end
+
+    if current_user.update(password: params[:password], password_confirmation: params[:password_confirmation])
+      render json: { message: "Password updated successfully." }
+    else
+      render_validation_errors(current_user)
+    end
+  end
+
   def destroy
     @user.destroy
     head :no_content

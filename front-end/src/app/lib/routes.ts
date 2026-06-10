@@ -36,6 +36,10 @@ interface NotFoundRouteState {
   kind: "not-found";
 }
 
+interface SettingsRouteState {
+  kind: "settings";
+}
+
 interface AboutRouteState {
   kind: "about";
 }
@@ -59,6 +63,7 @@ export type AppRoute =
   | AboutRouteState
   | PrivacyRouteState
   | TermsRouteState
+  | SettingsRouteState
   | NotFoundRouteState;
 
 export function isPublicInfoRoute(route: AppRoute) {
@@ -147,6 +152,10 @@ export function getRouteFromLocation(
 
   if (normalizedPath === "/terms") {
     return { kind: "terms" };
+  }
+
+  if (normalizedPath === "/settings") {
+    return { kind: "settings" };
   }
 
   if (normalizedPath === "/") {
