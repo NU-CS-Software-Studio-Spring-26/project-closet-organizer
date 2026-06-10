@@ -38,8 +38,10 @@ import { PrivacyPage } from "./components/info/PrivacyPage";
 import { TermsPage } from "./components/info/TermsPage";
 import { AccessRestrictedState } from "./components/shared/AccessRestrictedState";
 import { ClosetEmptyState } from "./components/shared/ClosetEmptyState";
+import { ForgotPasswordPage } from "./components/shared/ForgotPasswordPage";
 import { HomeLanding } from "./components/shared/HomeLanding";
 import { NotFoundPage } from "./components/shared/NotFoundPage";
+import { ResetPasswordPage } from "./components/shared/ResetPasswordPage";
 import { SiteFooter } from "./components/shared/SiteFooter";
 import { SiteHeader } from "./components/shared/SiteHeader";
 import { ClosetSearchField } from "./components/ClosetSearchField";
@@ -67,6 +69,7 @@ import {
   AppRoute,
   authErrorMessage,
   getRouteFromLocation,
+  isAuthRoute,
   isClosetRoute,
   isOutfitRoute,
   isProtectedRoute,
@@ -471,7 +474,8 @@ export default function App() {
     navigateTo("/");
   }
 
-  const shouldRenderStandaloneAuthPage = !user && (route.kind === "home" || isLoggedOutProtectedRoute);
+  const shouldRenderStandaloneAuthPage =
+    isAuthRoute(route) || (!user && (route.kind === "home" || isLoggedOutProtectedRoute));
 
   let pageContent;
 
@@ -479,7 +483,11 @@ export default function App() {
     return <div className="min-h-screen bg-background" />;
   }
 
-  if ((!user && route.kind === "home") || (isLoggedOutProtectedRoute && !isLoading)) {
+  if (route.kind === "forgot-password") {
+    pageContent = <ForgotPasswordPage />;
+  } else if (route.kind === "reset-password") {
+    pageContent = <ResetPasswordPage token={route.token} />;
+  } else if ((!user && route.kind === "home") || (isLoggedOutProtectedRoute && !isLoading)) {
     pageContent = (
       <HomeLanding
         homeMessage={homeMessage}

@@ -464,6 +464,22 @@ export async function changePassword(
   });
 }
 
+export async function requestPasswordReset(email: string) {
+  await requestJson<{ message: string }>(`${API_BASE_URL}/password_resets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(token: string, password: string, passwordConfirmation: string) {
+  await requestJson<{ message: string }>(`${API_BASE_URL}/password_resets`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, password, password_confirmation: passwordConfirmation }),
+  });
+}
+
 export interface FetchUsersParams {
   page?: number;
   perPage?: number;

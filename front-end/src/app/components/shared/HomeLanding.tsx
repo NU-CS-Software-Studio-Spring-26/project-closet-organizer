@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { ArrowRight } from "lucide-react";
 import { beginGoogleSignIn, loginLocal, registerLocal } from "../../lib/closet";
 import type { User } from "../../lib/closet";
+import { navigateTo } from "../../lib/routes";
 import { PrimitiveButton } from "../primitives/PrimitiveButton";
 import { PrimitiveText } from "../primitives/PrimitiveText";
 
@@ -183,6 +184,18 @@ export function HomeLanding({ homeMessage, onAuthSuccess }: HomeLandingProps) {
               placeholder="••••••••"
             />
           </div>
+
+          {mode === "sign-in" ? (
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => navigateTo("/forgot-password")}
+                className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Forgot password?
+              </button>
+            </div>
+          ) : null}
 
           {mode === "register" && (
             <div>
