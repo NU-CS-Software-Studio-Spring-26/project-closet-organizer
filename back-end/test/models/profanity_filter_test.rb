@@ -25,7 +25,7 @@ class ProfanityFilterTest < ActiveSupport::TestCase
   test "clothing item brand with profanity is invalid" do
     item = ClothingItem.new(
       name: "Nice Jacket",
-      brand: "damn brand",
+      brand: "shit brand",
       size: "medium",
       user: users(:one)
     )
