@@ -24,8 +24,8 @@ class ClothingItem < ApplicationRecord
     failed: 3
   }, prefix: true
 
-  validates :name, presence: true, length: { maximum: InputLengthPolicy::MAX_CLOTHING_ITEM_NAME }
-  validates :brand, length: { maximum: InputLengthPolicy::MAX_CLOTHING_ITEM_BRAND }, allow_blank: true
+  validates :name, presence: true, length: { maximum: InputLengthPolicy::MAX_CLOTHING_ITEM_NAME }, obscenity: true
+  validates :brand, length: { maximum: InputLengthPolicy::MAX_CLOTHING_ITEM_BRAND }, allow_blank: true, obscenity: true
   validates :category, length: { maximum: InputLengthPolicy::MAX_CLOTHING_ITEM_CATEGORY }, allow_blank: true
   validates :size, presence: true
   validate :tags_meet_length_policy

@@ -22,6 +22,7 @@ gem "bcrypt", "~> 3.1.7"
 gem "aws-sdk-s3", require: false
 gem "kaminari"
 gem "rack-attack"
+gem "obscenity"
 gem "omniauth"
 gem "omniauth-google-oauth2"
 gem "omniauth-rails_csrf_protection"

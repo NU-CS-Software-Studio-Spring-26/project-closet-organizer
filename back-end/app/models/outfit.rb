@@ -3,8 +3,8 @@ class Outfit < ApplicationRecord
   has_many :outfit_items, -> { order(:layer_order, :id) }, dependent: :destroy, autosave: true
   has_many :clothing_items, through: :outfit_items
 
-  validates :name, presence: true, length: { maximum: InputLengthPolicy::MAX_OUTFIT_NAME }
-  validates :notes, length: { maximum: InputLengthPolicy::MAX_OUTFIT_NOTES }, allow_blank: true
+  validates :name, presence: true, length: { maximum: InputLengthPolicy::MAX_OUTFIT_NAME }, obscenity: true
+  validates :notes, length: { maximum: InputLengthPolicy::MAX_OUTFIT_NOTES }, allow_blank: true, obscenity: true
   validate :tags_must_be_an_array
   validate :tags_meet_length_policy
 
